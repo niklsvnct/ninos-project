@@ -22,7 +22,7 @@ st.set_page_config(
 SHEET_URL_ABSEN = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_GhoIb1riX98FsP8W4f2-_dH_PLcLDZskjNOyDcnnvOhBg8FUp3xJ-c_YgV0Pw71k4STy4rR0_MS5/pub?output=csv"
 
 # 2. LINK DATA KETERANGAN (SHEET HASIL FORM - CSV)
-SHEET_URL_STATUS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ2QrBN8uTRiHINCEcZBrbdU-gzJ4pN2UljoqYG6NMoUQIK02yj_D1EdlxdPr82Pbr94v2o6V0Vh3Kt/pub?output=csv"
+SHEET_URL_STATUS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ2QrBN8uTRiHINCEcZBrbdU-gzJ4pN2UljoqYG6NMoUQIK02yj_D1EdlxdPr82Pbr94v2o6V0Vh3Kt/pub?gid=511860805&single=true&output=csv"
 
 # 3. LINK GOOGLE FORM (UNTUK HALAMAN INPUT KOORDINATOR)
 # Copy Link form yang biasa dishare ke WA ("https://forms.gle/..." atau link panjangnya)
