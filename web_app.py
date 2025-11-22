@@ -150,9 +150,14 @@ def load_absen(url):
 @st.cache_data(ttl=30)
 def load_status(url):
     try:
-        df = pd.read_csv(url); df = df.rename(columns=lambda x: x.strip())
+        df = pd.read_csv(url)
+        df = df.rename(columns=lambda x: x.strip())
         df['Nama Karyawan'] = df['Nama Karyawan'].astype(str).str.strip()
-        df['Tanggal'] = pd.to_datetime(df['Tanggal']).dt.date
+        
+        # --- INI BAGIAN YANG DIUPDATE BIAR PINTAR BACA 'Nov' ---
+        # Kita biarkan pandas menebak formatnya sendiri (paling aman)
+        df['Tanggal'] = pd.to_datetime(df['Tanggal'], format='mixed', dayfirst=True).dt.date
+        
         df['Keterangan'] = df['Keterangan'].astype(str).str.strip().str.upper()
         return df
     except: return None
