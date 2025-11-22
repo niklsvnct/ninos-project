@@ -7,33 +7,62 @@ import xlsxwriter
 
 # --- KONFIGURASI HALAMAN ---
 st.set_page_config(
-    page_title="Nino's Project - Intelligent",
-    page_icon="🧠",
+    page_title="Nino's Project - Monitoring",
+    page_icon="🚨",
     layout="wide"
 )
 
 # ==========================================
-# 👇 SETTING BATAS TERLAMBAT DISINI 👇
+# SETTING BATAS TERLAMBAT
 # ==========================================
-LATE_THRESHOLD = time(7, 5, 0) # Jam 07:05:00 (Lewat ini dianggap telat)
+LATE_THRESHOLD = time(7, 5, 0) 
 
-# 1. LINK DATA ABSEN (MESIN FINGER)
+# LINK DATABASE
 SHEET_URL_ABSEN = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_GhoIb1riX98FsP8W4f2-_dH_PLcLDZskjNOyDcnnvOhBg8FUp3xJ-c_YgV0Pw71k4STy4rR0_MS5/pub?output=csv"
-
-# 2. LINK DATA KETERANGAN (GOOGLE FORM)
 SHEET_URL_STATUS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ2QrBN8uTRiHINCEcZBrbdU-gzJ4pN2UljoqYG6NMoUQIK02yj_D1EdlxdPr82Pbr94v2o6V0Vh3Kt/pub?output=csv"
 
-# ==========================================
-
-# --- CSS: TAMPILAN KEREN ---
+# --- CSS ---
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&family=JetBrains+Mono:wght@400;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;800&family=JetBrains+Mono:wght@400;700&display=swap');
 
     .stApp {
         background-color: #050505;
-        background-image: radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%);
+        background-image: radial-gradient(at 50% 0%, hsla(225,39%,20%,1) 0, transparent 50%);
         color: white;
+    }
+
+    /* METRIC CARDS */
+    div[data-testid="stMetric"] {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 15px;
+        text-align: center;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+    div[data-testid="stMetricLabel"] { font-size: 0.9rem; color: #aaa; }
+    div[data-testid="stMetricValue"] { font-size: 2rem; font-weight: 800; color: white; }
+
+    /* HEADER */
+    .brand-title {
+        font-family: 'Outfit', sans-serif;
+        font-size: 3rem;
+        font-weight: 800;
+        background: linear-gradient(to right, #00c6ff, #0072ff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0;
+    }
+    .brand-subtitle {
+        font-family: 'Outfit', sans-serif;
+        color: #888;
+        font-size: 1rem;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        margin-bottom: 30px;
+        border-bottom: 1px solid #333;
+        padding-bottom: 20px;
     }
 
     /* CARD STYLES */
@@ -46,28 +75,37 @@ st.markdown("""
         transition: transform 0.3s;
     }
     .card:hover { transform: translateY(-5px); }
-
+    
     /* WARNA STATUS */
     .card-present { border-top: 3px solid #00f260; }
     .card-partial { border-top: 3px solid #FFC837; }
     .card-absent { border-top: 3px solid #FF416C; }
     .card-permit { border-top: 3px solid #d580ff; }
 
-    /* TEXT */
     .card-name { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 0.95rem; margin: 0; }
     .detail-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.8rem; color: #ccc; }
     .value { font-family: 'JetBrains Mono', monospace; font-weight: 600; }
-    
-    /* INDIKATOR TELAT DI WEB */
     .late-indicator { color: #ff4b4b; font-weight: bold; font-size: 0.8rem; margin-left: 5px; }
 
-    /* BUTTONS */
-    .stDownloadButton button { background: linear-gradient(90deg, #00c6ff, #0072ff) !important; color: white !important; font-weight: 800 !important; border: none !important; }
+    /* LIST DAFTAR NAMA (ANOMALY LIST) */
+    .anomaly-box {
+        padding: 10px;
+        margin-bottom: 5px;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        border-left: 4px solid;
+    }
+    .box-telat { background: rgba(255, 75, 75, 0.1); border-color: #ff4b4b; }
+    .box-izin { background: rgba(213, 128, 255, 0.1); border-color: #d580ff; }
+    .box-alpha { background: rgba(255, 255, 0, 0.1); border-color: #FFFF00; }
+
+    .anomaly-name { font-weight: bold; color: #fff; }
+    .anomaly-info { float: right; font-family: monospace; font-weight: bold; }
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<h1 style="text-align: center; background: linear-gradient(to right, #00dbde, #fc00ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-family: Outfit;">NINO\'S PROJECT</h1>', unsafe_allow_html=True)
-st.markdown('<p style="text-align: center; color: #aaa; letter-spacing: 2px;">INTELLIGENT ATTENDANCE SYSTEM</p>', unsafe_allow_html=True)
+st.markdown('<div class="brand-title">NINO\'S PROJECT</div>', unsafe_allow_html=True)
+st.markdown('<div class="brand-subtitle">FULL MONITORING DASHBOARD</div>', unsafe_allow_html=True)
 
 # --- SETUP DATA ---
 COL_NAMA = 'Person Name'
@@ -120,7 +158,6 @@ def get_min_time_in_range(group, start_time_str, end_time_str):
         return filtered[COL_TIMESTAMP].min().strftime('%H:%M')
     return None 
 
-# --- FUNGSI CEK TELAT ---
 def is_late(time_str):
     if not time_str or time_str == '': return False
     try:
@@ -152,7 +189,7 @@ def load_status(url):
         return df
     except: return None
 
-# --- MAIN ---
+# --- MAIN APP ---
 df_absen = load_absen(SHEET_URL_ABSEN)
 df_status = load_status(SHEET_URL_STATUS)
 
@@ -186,18 +223,110 @@ if df_absen is not None:
         df_final = pd.merge(pd.DataFrame({'Nama Karyawan': URUTAN_NAMA_CUSTOM}), df_res, on='Nama Karyawan', how='left')
         df_final[list(RENTANG_WAKTU.keys())] = df_final[list(RENTANG_WAKTU.keys())].fillna('')
 
-        # --- DOWNLOAD EXCEL (DENGAN LOGIKA TELAT & KETERANGAN) ---
+        # --- HITUNG METRIK & LIST ANOMALI ---
+        total_emp = len(df_final)
+        on_time_count = 0
+        late_count = 0
+        izin_count = 0
+        bolos_count = 0
+        
+        # LIST PENAMPUNG (3 Kategori)
+        list_terlambat = []
+        list_izin = []
+        list_bolos = []
+        
+        for _, row in df_final.iterrows():
+            nm = row['Nama Karyawan']
+            pagi = row['Pagi']
+            times = [row['Pagi'], row['Siang_1'], row['Siang_2'], row['Sore']]
+            empty = sum(1 for t in times if t == '')
+            manual_stat = status_today.get(nm, "")
+            
+            if manual_stat:
+                izin_count += 1
+                # Simpan Nama + Alasan (Sakit/CR/dll)
+                list_izin.append((nm, manual_stat))
+            elif empty == 4:
+                bolos_count += 1
+                list_bolos.append(nm)
+            else:
+                # Hitung detail hadir
+                if pagi and is_late(pagi):
+                    late_count += 1
+                    list_terlambat.append((nm, pagi))
+                else:
+                    on_time_count += 1
+
+        hadir_total = on_time_count + late_count
+        present_rate = round((hadir_total / total_emp) * 100, 1)
+
+        # 1. METRIK ANGKA BESAR
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("TOTAL KARYAWAN", total_emp, "Orang")
+        m2.metric("HADIR HARI INI", hadir_total, f"{present_rate}% Rate")
+        m3.metric("IZIN / SAKIT", izin_count, "Orang")
+        m4.metric("TANPA KETERANGAN", bolos_count, "Orang", delta_color="inverse")
+        
+        # 2. DAFTAR LIST ANOMALI (3 KOLOM)
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        col_telat, col_izin, col_bolos = st.columns(3)
+        
+        # --- KOLOM 1: TERLAMBAT ---
+        with col_telat:
+            st.markdown("#### ⏰ TERLAMBAT")
+            if list_terlambat:
+                with st.expander(f"Lihat {len(list_terlambat)} Orang", expanded=False):
+                    for nama, jam in list_terlambat:
+                        st.markdown(f"""
+                        <div class='anomaly-box box-telat'>
+                            <span class='anomaly-name'>{nama}</span>
+                            <span class='anomaly-info' style='color:#ff4b4b'>{jam}</span>
+                        </div>
+                        """, unsafe_allow_html=True)
+            else:
+                st.info("Semua Tepat Waktu!")
+
+        # --- KOLOM 2: IZIN (BARU) ---
+        with col_izin:
+            st.markdown("#### ℹ️ IZIN / SAKIT")
+            if list_izin:
+                with st.expander(f"Lihat {len(list_izin)} Orang", expanded=False):
+                    for nama, alasan in list_izin:
+                        st.markdown(f"""
+                        <div class='anomaly-box box-izin'>
+                            <span class='anomaly-name'>{nama}</span>
+                            <span class='anomaly-info' style='color:#d580ff'>{alasan}</span>
+                        </div>
+                        """, unsafe_allow_html=True)
+            else:
+                st.info("Nihil")
+
+        # --- KOLOM 3: ALPHA ---
+        with col_bolos:
+            st.markdown("#### ❌ ALPHA")
+            if list_bolos:
+                with st.expander(f"Lihat {len(list_bolos)} Orang", expanded=False):
+                    for nama in list_bolos:
+                        st.markdown(f"""
+                        <div class='anomaly-box box-alpha'>
+                            <span class='anomaly-name'>{nama}</span>
+                            <span class='anomaly-info' style='color:#FFFF00'>--:--</span>
+                        </div>
+                        """, unsafe_allow_html=True)
+            else:
+                st.success("Nihil (Semua Masuk/Izin)")
+
+        st.markdown("---")
+        
+        # --- DOWNLOAD EXCEL ---
         out = io.BytesIO()
         wb = xlsxwriter.Workbook(out, {'in_memory': True})
         ws = wb.add_worksheet('Rekap')
-        
-        # Format Excel
         fmt_head = wb.add_format({'bold': True, 'fg_color': '#4caf50', 'font_color': 'white', 'border': 1, 'align': 'center'})
         fmt_norm = wb.add_format({'border': 1, 'align': 'center'})
         fmt_miss = wb.add_format({'bg_color': '#FF0000', 'border': 1}) 
         fmt_full = wb.add_format({'bg_color': '#FFFF00', 'border': 1})
-        
-        # Format Baru: Teks Merah untuk yang Telat
         fmt_late = wb.add_format({'font_color': 'red', 'bold': True, 'border': 1, 'align': 'center'})
 
         headers = ['Nama Karyawan', 'Pagi', 'Siang_1', 'Siang_2', 'Sore', 'Keterangan']
@@ -209,48 +338,29 @@ if df_absen is not None:
             nm = row['Nama Karyawan']
             pagi = row['Pagi']
             manual_stat = status_today.get(nm, "")
-            
             ws.write(idx+1, 0, nm, fmt_norm)
-            
-            # Tulis Keterangan di Kolom F
             ws.write(idx+1, 5, manual_stat, fmt_norm)
-
-            # Logika Warna Sel
             times = [row['Pagi'], row['Siang_1'], row['Siang_2'], row['Sore']]
             empty = sum(1 for t in times if t == '')
 
             if manual_stat:
-                # Jika ada izin, kolom jam kosong biasa (putih)
-                for i, t in enumerate(times):
-                    ws.write(idx+1, i+1, "", fmt_norm)
+                for i in range(4): ws.write(idx+1, i+1, "", fmt_norm)
             elif empty == 4:
-                # Bolos Total -> Kuning
-                for i in range(4):
-                    ws.write(idx+1, i+1, "", fmt_full)
+                for i in range(4): ws.write(idx+1, i+1, "", fmt_full)
             else:
-                # Hadir / Partial
-                
-                # 1. JAM PAGI (Logika Telat)
-                if pagi == '':
-                    ws.write(idx+1, 1, "", fmt_miss) # Kosong merah
+                if pagi == '': ws.write(idx+1, 1, "", fmt_miss)
                 else:
-                    if is_late(pagi):
-                        ws.write(idx+1, 1, pagi, fmt_late) # Merah font (Telat)
-                    else:
-                        ws.write(idx+1, 1, pagi, fmt_norm) # Normal
-
-                # 2. JAM SISANYA (Siang-Sore)
+                    if is_late(pagi): ws.write(idx+1, 1, pagi, fmt_late)
+                    else: ws.write(idx+1, 1, pagi, fmt_norm)
                 rest_times = [row['Siang_1'], row['Siang_2'], row['Sore']]
                 for i, t in enumerate(rest_times):
-                    col_idx = i + 2 # Mulai dari kolom C
-                    if t == '':
-                        ws.write(idx+1, col_idx, "", fmt_miss)
-                    else:
-                        ws.write(idx+1, col_idx, t, fmt_norm)
+                    col_idx = i + 2
+                    if t == '': ws.write(idx+1, col_idx, "", fmt_miss)
+                    else: ws.write(idx+1, col_idx, t, fmt_norm)
 
         wb.close()
         out.seek(0)
-        st.download_button("📥 Download Smart Report", out, f"Rekap_Smart_{sel_date}.xlsx", use_container_width=True)
+        st.download_button("📥 DOWNLOAD EXCEL REPORT", out, f"Rekap_Smart_{sel_date}.xlsx", use_container_width=True)
         
         st.markdown("<br>", unsafe_allow_html=True)
 
@@ -270,7 +380,6 @@ if df_absen is not None:
                     empty = sum(1 for t in times if t == '')
                     manual_stat = status_today.get(nm, "")
 
-                    # Tentukan Tema Kartu
                     if manual_stat:
                         lbl = f"ℹ️ {manual_stat}"; theme = "card-permit"; clr = "#d580ff"
                     elif empty == 4:
@@ -280,7 +389,6 @@ if df_absen is not None:
                     else:
                         lbl = "✅ FULL PRESENT"; theme = "card-present"; clr = "#00f260"
 
-                    # Indikator Telat di Web
                     late_html = ""
                     if pagi and is_late(pagi):
                         late_html = '<span class="late-indicator">⏰ LATE</span>'
@@ -293,10 +401,7 @@ if df_absen is not None:
                             <img src="{avt}" class="avatar">
                             <div><p class="card-name">{nm}</p><p class="card-id">NP-{100+idx}</p></div>
                         </div>
-                        <div class="detail-row">
-                            <span class="label">Datang</span>
-                            <span><span class="value">{pagi if pagi else '-'}</span> {late_html}</span>
-                        </div>
+                        <div class="detail-row"><span class="label">Datang</span><span><span class="value">{pagi if pagi else '-'}</span> {late_html}</span></div>
                         <div class="detail-row"><span class="label">Pulang</span><span class="value">{row['Sore'] if row['Sore'] else '-'}</span></div>
                         <div style="text-align:right; font-size:0.7rem; font-weight:bold; color:{clr}; margin-top:10px;">{lbl}</div>
                     </div>
@@ -305,10 +410,9 @@ if df_absen is not None:
                     with st.popover("Detail", use_container_width=True):
                         if manual_stat: st.info(f"Status: {manual_stat}")
                         c1, c2 = st.columns(2)
-                        # Pagi (Cek Telat di Popover juga)
-                        pagi_val = pagi if pagi else "❌"
-                        if is_late(pagi): pagi_val += " (Telat)"
-                        c1.metric("Pagi", pagi_val)
+                        p_val = pagi if pagi else "❌"
+                        if is_late(pagi): p_val += " (Telat)"
+                        c1.metric("Pagi", p_val)
                         c1.metric("Siang 1", row['Siang_1'] if row['Siang_1'] else "❌")
                         c2.metric("Siang 2", row['Siang_2'] if row['Siang_2'] else "❌")
                         c2.metric("Sore", row['Sore'] if row['Sore'] else "❌")
