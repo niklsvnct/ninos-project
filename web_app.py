@@ -1,63 +1,39 @@
 import streamlit as st
 import pandas as pd
-from datetime import time
+from datetime import time, datetime
 import io
 import time as t_sleep
 import xlsxwriter
 
 # --- KONFIGURASI HALAMAN ---
 st.set_page_config(
-    page_title="Nino's Project - Hybrid System",
-    page_icon="🛡️",
+    page_title="Nino's Project - Intelligent",
+    page_icon="🧠",
     layout="wide"
 )
 
 # ==========================================
-# 👇 DATABASE TERINTEGRASI 👇
+# 👇 SETTING BATAS TERLAMBAT DISINI 👇
 # ==========================================
+LATE_THRESHOLD = time(7, 5, 0) # Jam 07:05:00 (Lewat ini dianggap telat)
 
-# 1. LINK DATA ABSEN (MESIN FINGER - DARI DATA SEBELUMNYA)
+# 1. LINK DATA ABSEN (MESIN FINGER)
 SHEET_URL_ABSEN = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_GhoIb1riX98FsP8W4f2-_dH_PLcLDZskjNOyDcnnvOhBg8FUp3xJ-c_YgV0Pw71k4STy4rR0_MS5/pub?output=csv"
 
-# 2. LINK DATA KETERANGAN (GOOGLE FORM - YANG BARU BAPAK KIRIM)
+# 2. LINK DATA KETERANGAN (GOOGLE FORM)
 SHEET_URL_STATUS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ2QrBN8uTRiHINCEcZBrbdU-gzJ4pN2UljoqYG6NMoUQIK02yj_D1EdlxdPr82Pbr94v2o6V0Vh3Kt/pub?output=csv"
 
 # ==========================================
 
-# --- CSS: TAMPILAN PRESTIGE DARK ---
+# --- CSS: TAMPILAN KEREN ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&family=JetBrains+Mono:wght@400;700&display=swap');
 
-    /* BACKGROUND */
     .stApp {
         background-color: #050505;
-        background-image: 
-            radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
-            radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
-            radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+        background-image: radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%);
         color: white;
-    }
-
-    /* TYPOGRAPHY */
-    .brand-title {
-        font-family: 'Outfit', sans-serif;
-        font-size: 3.5rem;
-        font-weight: 800;
-        background: linear-gradient(to right, #00dbde, #fc00ff);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 0;
-    }
-    .brand-subtitle {
-        font-family: 'Outfit', sans-serif;
-        color: #a0a0a0;
-        font-size: 1.1rem;
-        letter-spacing: 4px;
-        text-transform: uppercase;
-        margin-bottom: 40px;
-        border-bottom: 1px solid #333;
-        padding-bottom: 20px;
     }
 
     /* CARD STYLES */
@@ -65,65 +41,37 @@ st.markdown("""
         border-radius: 16px;
         padding: 20px;
         margin-bottom: 20px;
-        position: relative;
-        overflow: hidden;
         border: 1px solid rgba(255,255,255,0.05);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
         background: #1a1a1a;
+        transition: transform 0.3s;
     }
-    .card:hover { transform: translateY(-5px); z-index: 10; }
+    .card:hover { transform: translateY(-5px); }
 
-    /* --- TEMA WARNA KARTU --- */
-    
-    /* HIJAU (HADIR) */
-    .card-present { background: linear-gradient(160deg, #051a10 0%, #000000 100%); border-top: 3px solid #00f260; }
-    .card-present:hover { box-shadow: 0 10px 30px rgba(0, 242, 96, 0.15); border-color: #00f260; }
-    .card-present .status-text { color: #00f260; }
+    /* WARNA STATUS */
+    .card-present { border-top: 3px solid #00f260; }
+    .card-partial { border-top: 3px solid #FFC837; }
+    .card-absent { border-top: 3px solid #FF416C; }
+    .card-permit { border-top: 3px solid #d580ff; }
 
-    /* ORANYE (PARTIAL) */
-    .card-partial { background: linear-gradient(160deg, #1a1205 0%, #000000 100%); border-top: 3px solid #FFC837; }
-    .card-partial:hover { box-shadow: 0 10px 30px rgba(255, 200, 55, 0.15); border-color: #FFC837; }
-    .card-partial .status-text { color: #FFC837; }
-
-    /* MERAH (BOLOS) */
-    .card-absent { background: linear-gradient(160deg, #1a0505 0%, #000000 100%); border-top: 3px solid #FF416C; }
-    .card-absent:hover { box-shadow: 0 10px 30px rgba(255, 65, 108, 0.15); border-color: #FF416C; }
-    .card-absent .status-text { color: #FF416C; }
-
-    /* UNGU (IZIN/SAKIT/CR - DARI GOOGLE FORM) */
-    .card-permit { 
-        background: linear-gradient(160deg, #12051a 0%, #000000 100%); 
-        border-top: 3px solid #d580ff; 
-    }
-    .card-permit:hover { 
-        box-shadow: 0 10px 30px rgba(213, 128, 255, 0.15); 
-        border-color: #d580ff; 
-    }
-    .card-permit .status-text { color: #d580ff; }
-
-    /* ELEMENTS */
-    .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
-    .avatar { width: 45px; height: 45px; border-radius: 12px; border: 2px solid rgba(255,255,255,0.2); }
-    .card-name { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 0.95rem; color: white; margin: 0; }
-    .card-id { font-size: 0.7rem; color: #888; font-family: 'JetBrains Mono', monospace; margin: 0; }
+    /* TEXT */
+    .card-name { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 0.95rem; margin: 0; }
     .detail-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.8rem; color: #ccc; }
-    .status-text { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; text-align: right; margin-top: 10px; }
+    .value { font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+    
+    /* INDIKATOR TELAT DI WEB */
+    .late-indicator { color: #ff4b4b; font-weight: bold; font-size: 0.8rem; margin-left: 5px; }
 
-    /* INPUT & BUTTON */
-    .stTextInput input { background: #121212 !important; border: 1px solid #333 !important; color: white !important; border-radius: 8px; }
+    /* BUTTONS */
     .stDownloadButton button { background: linear-gradient(90deg, #00c6ff, #0072ff) !important; color: white !important; font-weight: 800 !important; border: none !important; }
-    div[data-testid="stPopover"] button { width: 100%; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: #aaa; font-size: 0.7rem; }
 </style>
 """, unsafe_allow_html=True)
 
-# --- HEADER ---
-st.markdown('<div class="brand-title">NINO\'S PROJECT</div>', unsafe_allow_html=True)
-st.markdown('<div class="brand-subtitle">HYBRID ATTENDANCE SYSTEM (AUTO + FORM)</div>', unsafe_allow_html=True)
+st.markdown('<h1 style="text-align: center; background: linear-gradient(to right, #00dbde, #fc00ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-family: Outfit;">NINO\'S PROJECT</h1>', unsafe_allow_html=True)
+st.markdown('<p style="text-align: center; color: #aaa; letter-spacing: 2px;">INTELLIGENT ATTENDANCE SYSTEM</p>', unsafe_allow_html=True)
 
 # --- SETUP DATA ---
 COL_NAMA = 'Person Name'
 COL_TIMESTAMP = 'Event Time'
-ABSENCE_MARKER = '' 
 
 RENTANG_WAKTU = {
     'Pagi': ('05:00:00', '09:00:00'),
@@ -172,39 +120,39 @@ def get_min_time_in_range(group, start_time_str, end_time_str):
         return filtered[COL_TIMESTAMP].min().strftime('%H:%M')
     return None 
 
-# --- LOAD DATA FUNCTIONS ---
+# --- FUNGSI CEK TELAT ---
+def is_late(time_str):
+    if not time_str or time_str == '': return False
+    try:
+        t = datetime.strptime(time_str, '%H:%M').time()
+        return t > LATE_THRESHOLD
+    except: return False
+
 @st.cache_data(ttl=30) 
 def load_absen(url):
     try:
         df = pd.read_csv(url)
-        df.columns = df.columns.str.strip() # Bersihkan spasi di nama kolom
+        df.columns = df.columns.str.strip()
         df[COL_NAMA] = df[COL_NAMA].astype(str).str.strip()
         df = df[df[COL_NAMA] != ''].copy()
         df[COL_TIMESTAMP] = pd.to_datetime(df[COL_TIMESTAMP])
         df['Tanggal'] = df[COL_TIMESTAMP].dt.date
         df['Waktu'] = df[COL_TIMESTAMP].dt.time
         return df
-    except Exception as e:
-        return None
+    except: return None
 
 @st.cache_data(ttl=30)
 def load_status(url):
     try:
         df = pd.read_csv(url)
-        df.columns = df.columns.str.strip() # Bersihkan spasi header
-        # Pastikan nama kolom sesuai Google Form (Biasanya: Timestamp, Tanggal, Nama Karyawan, Keterangan)
-        # Kita rename biar aman
-        df = df.rename(columns=lambda x: x.strip()) # Strip semua header
-        
-        # Konversi
+        df = df.rename(columns=lambda x: x.strip())
         df['Nama Karyawan'] = df['Nama Karyawan'].astype(str).str.strip()
         df['Tanggal'] = pd.to_datetime(df['Tanggal']).dt.date
         df['Keterangan'] = df['Keterangan'].astype(str).str.strip().str.upper()
         return df
-    except Exception as e:
-        return None
+    except: return None
 
-# --- MAIN LOGIC ---
+# --- MAIN ---
 df_absen = load_absen(SHEET_URL_ABSEN)
 df_status = load_status(SHEET_URL_STATUS)
 
@@ -218,149 +166,151 @@ if df_absen is not None:
 
     st.markdown("---")
 
-    # 1. Filter Absen Harian
     if sel_date:
         df_today = df_absen[df_absen['Tanggal'] == sel_date]
-    else:
-        df_today = pd.DataFrame(columns=[COL_NAMA, 'Tanggal']) # Kosong
-
-    # 2. Filter Status Harian (Izin/Sakit)
-    status_today = {}
-    if df_status is not None and sel_date:
-        # Ambil data status yang tanggalnya sama dengan selected_date
-        df_status_today = df_status[df_status['Tanggal'] == sel_date]
-        if not df_status_today.empty:
-            # Mapping: {'Nama Orang': 'SAKIT', 'Nama Lain': 'IZIN'}
-            status_today = pd.Series(df_status_today.Keterangan.values, index=df_status_today['Nama Karyawan']).to_dict()
-
-    # 3. Proses Rekap Absensi
-    recap_dict = {}
-    grouped = df_today.groupby([COL_NAMA, 'Tanggal'])
-    for cat, (s, e) in RENTANG_WAKTU.items():
-        recap_dict[cat] = grouped.apply(lambda x: get_min_time_in_range(x, s, e))
-
-    df_res = pd.DataFrame(recap_dict).reset_index()
-    if not df_res.empty:
-        df_res.rename(columns={COL_NAMA: 'Nama Karyawan'}, inplace=True)
-    
-    # Gabung dengan Master 101 Nama
-    df_final = pd.merge(pd.DataFrame({'Nama Karyawan': URUTAN_NAMA_CUSTOM}), df_res, on='Nama Karyawan', how='left')
-    df_final[list(RENTANG_WAKTU.keys())] = df_final[list(RENTANG_WAKTU.keys())].fillna('')
-
-    # --- DOWNLOAD EXCEL (HYBRID) ---
-    out = io.BytesIO()
-    wb = xlsxwriter.Workbook(out, {'in_memory': True})
-    ws = wb.add_worksheet('Rekap')
-    
-    # Format
-    fmt_head = wb.add_format({'bold': True, 'fg_color': '#4caf50', 'font_color': 'white', 'border': 1, 'align': 'center'})
-    fmt_norm = wb.add_format({'border': 1, 'align': 'center'})
-    
-    # Warna Warni Excel
-    fmt_miss = wb.add_format({'bg_color': '#FF0000', 'border': 1}) # Merah (Bolong)
-    fmt_full_absent = wb.add_format({'bg_color': '#FFFF00', 'border': 1}) # Kuning (Bolos Total)
-    fmt_permit = wb.add_format({'bg_color': '#d580ff', 'border': 1, 'align': 'center'}) # Ungu (Izin)
-
-    headers = ['Nama Karyawan', 'Pagi', 'Siang_1', 'Siang_2', 'Sore', 'Keterangan']
-    ws.write_row(0, 0, headers, fmt_head)
-    ws.set_column(0, 0, 30) # Lebar Nama
-    ws.set_column(1, 5, 15) # Lebar Jam & Ket
-
-    for idx, row in df_final.iterrows():
-        nm = row['Nama Karyawan']
-        times = [row['Pagi'], row['Siang_1'], row['Siang_2'], row['Sore']]
-        empty_count = sum(1 for t in times if t == '')
         
-        # Cek apakah dia ada di Daftar Izin?
-        manual_status = status_today.get(nm, "") # Ambil status (SAKIT/IZIN), kosong jika tidak ada
+        status_today = {}
+        if df_status is not None:
+            df_stat_today = df_status[df_status['Tanggal'] == sel_date]
+            if not df_stat_today.empty:
+                status_today = pd.Series(df_stat_today.Keterangan.values, index=df_stat_today['Nama Karyawan']).to_dict()
+
+        recap_dict = {}
+        grouped = df_today.groupby([COL_NAMA, 'Tanggal'])
+        for cat, (s, e) in RENTANG_WAKTU.items():
+            recap_dict[cat] = grouped.apply(lambda x: get_min_time_in_range(x, s, e))
+
+        df_res = pd.DataFrame(recap_dict).reset_index()
+        if not df_res.empty: df_res.rename(columns={COL_NAMA: 'Nama Karyawan'}, inplace=True)
         
-        ws.write(idx+1, 0, nm, fmt_norm)
+        df_final = pd.merge(pd.DataFrame({'Nama Karyawan': URUTAN_NAMA_CUSTOM}), df_res, on='Nama Karyawan', how='left')
+        df_final[list(RENTANG_WAKTU.keys())] = df_final[list(RENTANG_WAKTU.keys())].fillna('')
+
+        # --- DOWNLOAD EXCEL (DENGAN LOGIKA TELAT & KETERANGAN) ---
+        out = io.BytesIO()
+        wb = xlsxwriter.Workbook(out, {'in_memory': True})
+        ws = wb.add_worksheet('Rekap')
         
-        if manual_status:
-            # JIKA ADA IZIN -> TULIS DI KETERANGAN & WARNA UNGU
-            # (Opsional: Mau di-merge kolom jamnya atau dibiarkan kosong berwarna ungu)
-            # Kita buat kolom jamnya kosong tapi ungu, kolom keterangan diisi
-            for i in range(4):
-                ws.write(idx+1, i+1, "", fmt_permit)
-            ws.write(idx+1, 5, manual_status, fmt_permit)
+        # Format Excel
+        fmt_head = wb.add_format({'bold': True, 'fg_color': '#4caf50', 'font_color': 'white', 'border': 1, 'align': 'center'})
+        fmt_norm = wb.add_format({'border': 1, 'align': 'center'})
+        fmt_miss = wb.add_format({'bg_color': '#FF0000', 'border': 1}) 
+        fmt_full = wb.add_format({'bg_color': '#FFFF00', 'border': 1})
+        
+        # Format Baru: Teks Merah untuk yang Telat
+        fmt_late = wb.add_format({'font_color': 'red', 'bold': True, 'border': 1, 'align': 'center'})
+
+        headers = ['Nama Karyawan', 'Pagi', 'Siang_1', 'Siang_2', 'Sore', 'Keterangan']
+        ws.write_row(0, 0, headers, fmt_head)
+        ws.set_column(0, 0, 30)
+        ws.set_column(1, 5, 15)
+
+        for idx, row in df_final.iterrows():
+            nm = row['Nama Karyawan']
+            pagi = row['Pagi']
+            manual_stat = status_today.get(nm, "")
             
-        elif empty_count == 4:
-            # BOLOS TOTAL -> KUNING
-            for i in range(4):
-                ws.write(idx+1, i+1, "", fmt_full_absent)
-            ws.write(idx+1, 5, "", fmt_full_absent)
+            ws.write(idx+1, 0, nm, fmt_norm)
             
-        else:
-            # HADIR / PARTIAL
-            for i, t in enumerate(times):
-                if t == '':
-                    ws.write(idx+1, i+1, "", fmt_miss) # Merah kalau bolong
+            # Tulis Keterangan di Kolom F
+            ws.write(idx+1, 5, manual_stat, fmt_norm)
+
+            # Logika Warna Sel
+            times = [row['Pagi'], row['Siang_1'], row['Siang_2'], row['Sore']]
+            empty = sum(1 for t in times if t == '')
+
+            if manual_stat:
+                # Jika ada izin, kolom jam kosong biasa (putih)
+                for i, t in enumerate(times):
+                    ws.write(idx+1, i+1, "", fmt_norm)
+            elif empty == 4:
+                # Bolos Total -> Kuning
+                for i in range(4):
+                    ws.write(idx+1, i+1, "", fmt_full)
+            else:
+                # Hadir / Partial
+                
+                # 1. JAM PAGI (Logika Telat)
+                if pagi == '':
+                    ws.write(idx+1, 1, "", fmt_miss) # Kosong merah
                 else:
-                    ws.write(idx+1, i+1, t, fmt_norm)
-            ws.write(idx+1, 5, "", fmt_norm)
-
-    wb.close()
-    out.seek(0)
-    st.download_button("📥 Download Absence Report Here", out, f"Rekap_{sel_date}.xlsx", use_container_width=True)
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # --- GRID CARD DISPLAY ---
-    if search_q:
-        df_final = df_final[df_final['Nama Karyawan'].str.contains(search_q, case=False, na=False)]
-
-    COLS = 4
-    rows = [df_final.iloc[i:i+COLS] for i in range(0, len(df_final), COLS)]
-    
-    for r in rows:
-        cols = st.columns(COLS)
-        for i, (idx, row) in enumerate(r.iterrows()):
-            with cols[i]:
-                nm = row['Nama Karyawan']
-                times = [row['Pagi'], row['Siang_1'], row['Siang_2'], row['Sore']]
-                empty = sum(1 for t in times if t == '')
-                
-                # Cek Status Manual dari Google Form
-                manual_stat = status_today.get(nm, None)
-
-                if manual_stat:
-                    # TAMPILAN KARTU IZIN (UNGU)
-                    lbl = f"ℹ️ {manual_stat}"
-                    theme = "card-permit"
-                    clr = "#d580ff"
-                elif empty == 4:
-                    lbl = "⛔ TOTAL ABSENT"; theme = "card-absent"; clr = "#FF416C"
-                elif empty > 0:
-                    lbl = "⚠️ PARTIAL"; theme = "card-partial"; clr = "#FFC837"
-                else:
-                    lbl = "✅ FULL PRESENT"; theme = "card-present"; clr = "#00f260"
-
-                avt = f"https://ui-avatars.com/api/?name={nm.replace(' ', '+')}&background=random&color=fff"
-                
-                # RENDER HTML
-                st.markdown(f"""
-                <div class="card {theme}">
-                    <div class="card-header">
-                        <img src="{avt}" class="avatar">
-                        <div><p class="card-name">{nm}</p><p class="card-id">NP-{100+idx}</p></div>
-                    </div>
-                    <div class="detail-row"><span class="label">In</span><span class="value">{row['Pagi'] if row['Pagi'] else '-'}</span></div>
-                    <div class="detail-row"><span class="label">Out</span><span class="value">{row['Sore'] if row['Sore'] else '-'}</span></div>
-                    <div class="status-text" style="color: {clr};">{lbl}</div>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                # POPOVER DETAIL
-                with st.popover("Show Detail", use_container_width=True):
-                    st.caption(f"Record for: {nm}")
-                    if manual_stat:
-                        st.info(f"Status: {manual_stat}")
+                    if is_late(pagi):
+                        ws.write(idx+1, 1, pagi, fmt_late) # Merah font (Telat)
                     else:
-                        c1, c2 = st.columns(2)
-                        c1.metric("Pagi", row['Pagi'] if row['Pagi'] else "-")
-                        c1.metric("Siang 1", row['Siang_1'] if row['Siang_1'] else "-")
-                        c2.metric("Siang 2", row['Siang_2'] if row['Siang_2'] else "-")
-                        c2.metric("Sore", row['Sore'] if row['Sore'] else "-")
+                        ws.write(idx+1, 1, pagi, fmt_norm) # Normal
 
+                # 2. JAM SISANYA (Siang-Sore)
+                rest_times = [row['Siang_1'], row['Siang_2'], row['Sore']]
+                for i, t in enumerate(rest_times):
+                    col_idx = i + 2 # Mulai dari kolom C
+                    if t == '':
+                        ws.write(idx+1, col_idx, "", fmt_miss)
+                    else:
+                        ws.write(idx+1, col_idx, t, fmt_norm)
+
+        wb.close()
+        out.seek(0)
+        st.download_button("📥 Download Smart Report", out, f"Rekap_Smart_{sel_date}.xlsx", use_container_width=True)
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # --- GRID CARD ---
+        if search_q: df_final = df_final[df_final['Nama Karyawan'].str.contains(search_q, case=False, na=False)]
+        
+        COLS = 4
+        rows = [df_final.iloc[i:i+COLS] for i in range(0, len(df_final), COLS)]
+        
+        for r in rows:
+            cols = st.columns(COLS)
+            for i, (idx, row) in enumerate(r.iterrows()):
+                with cols[i]:
+                    nm = row['Nama Karyawan']
+                    pagi = row['Pagi']
+                    times = [pagi, row['Siang_1'], row['Siang_2'], row['Sore']]
+                    empty = sum(1 for t in times if t == '')
+                    manual_stat = status_today.get(nm, "")
+
+                    # Tentukan Tema Kartu
+                    if manual_stat:
+                        lbl = f"ℹ️ {manual_stat}"; theme = "card-permit"; clr = "#d580ff"
+                    elif empty == 4:
+                        lbl = "⛔ TOTAL ABSENT"; theme = "card-absent"; clr = "#FF416C"
+                    elif empty > 0:
+                        lbl = "⚠️ PARTIAL"; theme = "card-partial"; clr = "#FFC837"
+                    else:
+                        lbl = "✅ FULL PRESENT"; theme = "card-present"; clr = "#00f260"
+
+                    # Indikator Telat di Web
+                    late_html = ""
+                    if pagi and is_late(pagi):
+                        late_html = '<span class="late-indicator">⏰ LATE</span>'
+
+                    avt = f"https://ui-avatars.com/api/?name={nm.replace(' ', '+')}&background=random&color=fff"
+                    
+                    st.markdown(f"""
+                    <div class="card {theme}">
+                        <div class="card-header">
+                            <img src="{avt}" class="avatar">
+                            <div><p class="card-name">{nm}</p><p class="card-id">NP-{100+idx}</p></div>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Datang</span>
+                            <span><span class="value">{pagi if pagi else '-'}</span> {late_html}</span>
+                        </div>
+                        <div class="detail-row"><span class="label">Pulang</span><span class="value">{row['Sore'] if row['Sore'] else '-'}</span></div>
+                        <div style="text-align:right; font-size:0.7rem; font-weight:bold; color:{clr}; margin-top:10px;">{lbl}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    with st.popover("Detail", use_container_width=True):
+                        if manual_stat: st.info(f"Status: {manual_stat}")
+                        c1, c2 = st.columns(2)
+                        # Pagi (Cek Telat di Popover juga)
+                        pagi_val = pagi if pagi else "❌"
+                        if is_late(pagi): pagi_val += " (Telat)"
+                        c1.metric("Pagi", pagi_val)
+                        c1.metric("Siang 1", row['Siang_1'] if row['Siang_1'] else "❌")
+                        c2.metric("Siang 2", row['Siang_2'] if row['Siang_2'] else "❌")
+                        c2.metric("Sore", row['Sore'] if row['Sore'] else "❌")
 else:
-    st.info("Connecting to Database...")
+    st.info("Menghubungkan Database...")
