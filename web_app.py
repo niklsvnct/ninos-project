@@ -6,7 +6,7 @@ import time as t_sleep
 import xlsxwriter
 import streamlit.components.v1 as components
 
-# --- KONFIGURASI HALAMAN ---
+# --- 1. KONFIGURASI HALAMAN ---
 st.set_page_config(
     page_title="Nino's Project - Command Center",
     page_icon="⚡",
@@ -14,54 +14,23 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ==========================================
-# 👇 LINK DATABASE SUDAH SAYA MASUKKAN 👇
-# ==========================================
+# --- 2. LINK DATABASE (PASTIKAN BENAR) ---
 SHEET_URL_ABSEN = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_GhoIb1riX98FsP8W4f2-_dH_PLcLDZskjNOyDcnnvOhBg8FUp3xJ-c_YgV0Pw71k4STy4rR0_MS5/pub?output=csv"
+# 👇 GANTI INI DENGAN LINK SHEET 2 YANG BARU 👇
 SHEET_URL_STATUS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ2QrBN8uTRiHINCEcZBrbdU-gzJ4pN2UljoqYG6NMoUQIK02yj_D1EdlxdPr82Pbr94v2o6V0Vh3Kt/pub?gid=511860805&single=true&output=csv"
 GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeopdaE-lyOtFd2TUr5C3K2DWE3Syt2PaKoXMp0cmWKIFnijw/viewform?usp=header" 
-# ==========================================
 
-# SETTING BATAS TERLAMBAT
-LATE_THRESHOLD = time(7, 5, 0) 
-
-# --- CSS STYLE ---
-st.markdown("""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;800&family=JetBrains+Mono:wght@400;700&display=swap');
-    .stApp { background-color: #050505; background-image: radial-gradient(at 50% 0%, hsla(225,39%,20%,1) 0, transparent 50%); color: white; }
-    section[data-testid="stSidebar"] { background-color: #0a0a0a; border-right: 1px solid #333; }
-    .brand-title { font-family: 'Outfit', sans-serif; font-size: 3rem; font-weight: 800; background: linear-gradient(to right, #00c6ff, #0072ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0; }
-    .brand-subtitle { font-family: 'Outfit', sans-serif; color: #888; font-size: 1rem; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 30px; border-bottom: 1px solid #333; padding-bottom: 20px; }
-    div[data-testid="stMetric"] { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 15px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-    div[data-testid="stMetricLabel"] { font-size: 0.9rem; color: #aaa; }
-    div[data-testid="stMetricValue"] { font-size: 2rem; font-weight: 800; color: white; }
-    .card { border-radius: 16px; padding: 20px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05); background: #1a1a1a; transition: transform 0.3s; }
-    .card:hover { transform: translateY(-5px); }
-    .card-present { border-top: 3px solid #00f260; } .card-partial { border-top: 3px solid #FFC837; } .card-absent { border-top: 3px solid #FF416C; } .card-permit { border-top: 3px solid #d580ff; }
-    .card-name { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 0.95rem; margin: 0; }
-    .detail-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.8rem; color: #ccc; }
-    .value { font-family: 'JetBrains Mono', monospace; font-weight: 600; }
-    .late-indicator { color: #ff4b4b; font-weight: bold; font-size: 0.8rem; margin-left: 5px; }
-    .anomaly-box { padding: 10px; margin-bottom: 5px; border-radius: 4px; font-size: 0.9rem; border-left: 4px solid; }
-    .box-telat { background: rgba(255, 75, 75, 0.1); border-color: #ff4b4b; } .box-izin { background: rgba(213, 128, 255, 0.1); border-color: #d580ff; } .box-alpha { background: rgba(255, 255, 0, 0.1); border-color: #FFFF00; }
-    .anomaly-name { font-weight: bold; color: #fff; } .anomaly-info { float: right; font-family: monospace; font-weight: bold; }
-    .stDownloadButton button { background: linear-gradient(90deg, #00c6ff, #0072ff) !important; color: white !important; font-weight: 800 !important; border: none !important; width: 100%; }
-    .stTextInput input { background: #18181b !important; border: 1px solid #27272a !important; color: white !important; }
-    .streamlit-expanderHeader { font-family: 'Outfit', sans-serif; font-weight: 700; background-color: rgba(255,255,255,0.05); border-radius: 8px; color: white; }
-</style>
-""", unsafe_allow_html=True)
-
-# --- DATA SETUP ---
+# --- 3. SETUP VARIABEL ---
 COL_NAMA = 'Person Name'
 COL_TIMESTAMP = 'Event Time'
-RENTANG_WAKTU = {'Pagi': ('05:00:00', '09:00:00'), 'Siang_1': ('11:29:00', '12:30:59'), 'Siang_2': ('12:31:00', '13:30:59'), 'Sore': ('17:00:00', '23:59:59')}
+LATE_THRESHOLD = time(7, 5, 0) 
+RENTANG_WAKTU = {'Pagi': ('03:00:00', '11:00:00'), 'Siang_1': ('11:29:00', '12:30:59'), 'Siang_2': ('12:31:00', '13:30:59'), 'Sore': ('17:00:00', '23:59:59')}
 
 DATA_DIVISI = {
-    "SPT&SPV": ["Patra Anggana", "Su Adam", "Budiman Arifin", "Rifaldy Ilham Bhagaskara", "Marwan S Halid", "Budiono"],
+    "LEADERSHIP": ["Patra Anggana", "Su Adam", "Budiman Arifin", "Rifaldy Ilham Bhagaskara", "Marwan S Halid", "Budiono"],
     "TLB": ["M. Ansori", "Bayu Pratama Putra Katuwu", "Yoga Nugraha Putra Pasaribu", "Junaidi Taib", "Muhammad Rizal Amra", "Rusli Dj"],
     "TBL": ["Venesia Aprilia Ineke", "Muhammad Naufal Ramadhan", "Yuzak Gerson Puturuhu", "Muhamad Alief Wildan", "Gafur Hamisi", "Jul Akbar M. Nur", "Sarni Massiri", "Adrianto Laundang", "Wahyudi Ismail"],
-    "TRANS APRON": ["Marichi Gita Rusdi", "Ilham Rahim", "Abdul Mu'Iz Simal", "Dwiki Agus Saputro", "Moh. Sofyan", "Faisal M. Kadir", "Amirudin Rustam", "Faturrahman Kaunar", "Wawan Hermawan", "Rahmat Joni", "Nur Ichsan"],
+    "TRANS APRON": ["Marichi Gita Rusdi", "Ilham Rahim", "Abdul Mu Iz Simal", "Dwiki Agus Saputro", "Moh. Sofyan", "Faisal M. Kadir", "Amirudin Rustam", "Faturrahman Kaunar", "Wawan Hermawan", "Rahmat Joni", "Nur Ichsan"],
     "ATS": ["Nurultanti", "Firlon Paembong", "Irwan Rezky Setiawan", "Yusuf Arviansyah", "Nurdahlia Is. Folaimam", "Ghaly Rabbani Panji Indra", "Ikhsan Wahyu Vebriyan", "Rizki Mahardhika Ardi Tigo", "Nikolaus Vincent Quirino"],
     "ADM COMPLIANCE": ["Yessicha Aprilyona Siregar", "Gabriela Margrith Louisa Klavert", "Aldi Saptono"],
     "TRANSLATOR": ["Wilyam Candra", "Norika Joselyn Modnissa"],
@@ -77,7 +46,37 @@ URUTAN_NAMA_CUSTOM = []
 for unit, members in DATA_DIVISI.items():
     URUTAN_NAMA_CUSTOM.extend(members)
 
-# --- HELPER FUNCTIONS ---
+# --- 4. CSS STYLE (FIXED) ---
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;800&family=JetBrains+Mono:wght@400;700&display=swap');
+    .stApp { background-color: #050505; background-image: radial-gradient(at 50% 0%, hsla(225,39%,20%,1) 0, transparent 50%); color: white; }
+    section[data-testid="stSidebar"] { background-color: #0a0a0a; border-right: 1px solid #333; }
+    .brand-title { font-family: 'Outfit', sans-serif; font-size: 3rem; font-weight: 800; background: linear-gradient(to right, #00c6ff, #0072ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0; }
+    .brand-subtitle { font-family: 'Outfit', sans-serif; color: #888; font-size: 1rem; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 30px; border-bottom: 1px solid #333; padding-bottom: 20px; }
+    div[data-testid="stMetric"] { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 15px; text-align: center; }
+    div[data-testid="stMetricLabel"] { font-size: 0.9rem; color: #aaa; }
+    div[data-testid="stMetricValue"] { font-size: 2rem; font-weight: 800; color: white; }
+    
+    /* CARD STYLES */
+    .card { border-radius: 16px; padding: 20px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05); background: #1a1a1a; transition: transform 0.3s; }
+    .card:hover { transform: translateY(-5px); }
+    .card-present { border-top: 3px solid #00f260; } 
+    .card-partial { border-top: 3px solid #FFC837; } 
+    .card-absent { border-top: 3px solid #FF416C; } 
+    .card-permit { border-top: 3px solid #d580ff; }
+    
+    .card-name { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 0.95rem; margin: 0; color: white; }
+    .detail-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.8rem; color: #ccc; }
+    .value { font-family: 'JetBrains Mono', monospace; font-weight: 600; }
+    .late-indicator { color: #ff4b4b; font-weight: bold; font-size: 0.8rem; margin-left: 5px; }
+    
+    .stDownloadButton button { background: linear-gradient(90deg, #00c6ff, #0072ff) !important; color: white !important; font-weight: 800 !important; border: none !important; width: 100%; }
+    .stTextInput input { background: #18181b !important; border: 1px solid #27272a !important; color: white !important; }
+</style>
+""", unsafe_allow_html=True)
+
+# --- 5. FUNGSI LOGIKA ---
 def get_min_time_in_range(group, s, e):
     st_t = time.fromisoformat(s); end_t = time.fromisoformat(e)
     filtered = group[(group['Waktu'] >= st_t) & (group['Waktu'] <= end_t)]
@@ -88,31 +87,29 @@ def is_late(time_str):
     try: return datetime.strptime(time_str, '%H:%M').time() > LATE_THRESHOLD
     except: return False
 
-@st.cache_data(ttl=10) 
+@st.cache_data(ttl=5) 
 def load_absen(url):
     try:
         df = pd.read_csv(url); df.columns = df.columns.str.strip()
-        if COL_NAMA not in df.columns:
-            st.error(f"❌ Gagal Baca Absen: Kolom '{COL_NAMA}' tidak ditemukan.")
-            return None
+        if COL_NAMA not in df.columns: return None
         df[COL_NAMA] = df[COL_NAMA].astype(str).str.strip(); df = df[df[COL_NAMA] != ''].copy()
         df[COL_TIMESTAMP] = pd.to_datetime(df[COL_TIMESTAMP])
         df['Tanggal'] = df[COL_TIMESTAMP].dt.date; df['Waktu'] = df[COL_TIMESTAMP].dt.time
         return df
-    except Exception as e:
-        st.error(f"❌ Error Load Absen: {e}")
-        return None
+    except: return None
 
-@st.cache_data(ttl=10)
+@st.cache_data(ttl=5)
 def load_status(url):
     try:
         df = pd.read_csv(url)
         df = df.rename(columns=lambda x: x.strip())
         df['Nama Karyawan'] = df['Nama Karyawan'].astype(str).str.strip()
         
-        # --- FIX TANGGAL 11/8/2025 ---
-        # dayfirst=False artinya formatnya Bulan/Tanggal/Tahun (M/D/Y)
-        df['Tanggal'] = pd.to_datetime(df['Tanggal'], format='mixed', dayfirst=False).dt.date
+        # JURUS ANTI-GAGAL TANGGAL:
+        # Kita buat kolom Tanggal_Str yang formatnya String YYYY-MM-DD
+        # Jadi tidak peduli inputnya miring/lurus, kita samakan format teksnya
+        df['Tanggal'] = pd.to_datetime(df['Tanggal'], dayfirst=False, errors='coerce') # Coba M/D/Y dulu
+        df['Tanggal_Str'] = df['Tanggal'].dt.strftime('%Y-%m-%d')
         
         df['Keterangan'] = df['Keterangan'].astype(str).str.strip().str.upper()
         return df
@@ -120,7 +117,7 @@ def load_status(url):
         return None
 
 # ==========================================
-# --- APLIKASI UTAMA ---
+# --- 6. APLIKASI UTAMA ---
 # ==========================================
 
 with st.sidebar:
@@ -138,16 +135,14 @@ if menu == "📊 Dashboard Monitoring":
     df_status = load_status(SHEET_URL_STATUS)
 
     if df_absen is None:
-        st.warning("⚠️ Data Absensi Mesin belum terbaca / kosong. Cek koneksi.")
+        st.warning("⚠️ Data Absensi Mesin belum terbaca / kosong.")
         df_absen = pd.DataFrame(columns=[COL_NAMA, COL_TIMESTAMP, 'Tanggal', 'Waktu'])
 
     c1, c2 = st.columns([1, 3])
     with c1:
         avail_dates = sorted(df_absen['Tanggal'].unique())
-        if not avail_dates:
-            sel_date = st.date_input("📅 Pilih Tanggal", value=None)
-        else:
-            sel_date = st.date_input("📅 Pilih Tanggal", value=avail_dates[-1])
+        if not avail_dates: sel_date = st.date_input("📅 Pilih Tanggal", value=None)
+        else: sel_date = st.date_input("📅 Pilih Tanggal", value=avail_dates[-1])
     with c2:
         search_q = st.text_input("🔍 Search Employee", placeholder="Ketik nama...")
 
@@ -156,13 +151,16 @@ if menu == "📊 Dashboard Monitoring":
     if sel_date:
         df_today = df_absen[df_absen['Tanggal'] == sel_date]
         status_today = {}
+        
+        # LOAD STATUS (PAKAI FORMAT STRING BIAR PASTI COCOK)
         if df_status is not None:
-            df_stat_today = df_status[df_status['Tanggal'] == sel_date]
+            sel_date_str = sel_date.strftime('%Y-%m-%d')
+            df_stat_today = df_status[df_status['Tanggal_Str'] == sel_date_str]
             if not df_stat_today.empty:
                 status_today = pd.Series(df_stat_today.Keterangan.values, index=df_stat_today['Nama Karyawan']).to_dict()
 
-        if df_today.empty: 
-            df_res = pd.DataFrame(columns=[COL_NAMA]) 
+        # PROSES DATA MESIN
+        if df_today.empty: df_res = pd.DataFrame(columns=[COL_NAMA]) 
         else:
             recap_dict = {}; grouped = df_today.groupby([COL_NAMA, 'Tanggal'])
             for cat, (s, e) in RENTANG_WAKTU.items():
@@ -202,6 +200,8 @@ if menu == "📊 Dashboard Monitoring":
         m4.metric("TANPA KETERANGAN", bolos_count, "Orang", delta_color="inverse")
         
         st.markdown("<br>", unsafe_allow_html=True)
+        
+        # DAFTAR LIST
         col_telat, col_izin, col_bolos = st.columns(3)
         with col_telat:
             st.markdown("#### ⏰ TERLAMBAT")
@@ -292,6 +292,25 @@ if menu == "📊 Dashboard Monitoring":
                                         c2.metric("Siang 2", row['Siang_2'] if row['Siang_2'] else "❌"); c2.metric("Sore", row['Sore'] if row['Sore'] else "❌")
 
     else: st.info("Menghubungkan Database...")
+    
+    # --- AREA DEBUGGING SUPER (PASTI KETAHUAN SALAHNYA DIMANA) ---
+    st.divider()
+    with st.expander("🛠️ DEBUGGING DATA MENTAH (CEK DISINI)", expanded=True):
+        st.write("### Data Mentah dari Sheet 2 (Google Form):")
+        if df_status is not None:
+            st.dataframe(df_status)
+            st.write(f"🔍 Website mencari tanggal: **{sel_date}** (Format YYYY-MM-DD)")
+            
+            # Cek apakah ada data yang cocok
+            cocok = df_status[df_status['Tanggal_Str'] == str(sel_date)]
+            if cocok.empty:
+                st.error(f"❌ TIDAK ADA data yang cocok dengan tanggal {sel_date}.")
+                st.info("Tips: Cek kolom 'Tanggal_Str' di tabel atas. Apakah formatnya sudah benar YYYY-MM-DD?")
+            else:
+                st.success(f"✅ DITEMUKAN {len(cocok)} data cocok!")
+                st.dataframe(cocok)
+        else:
+            st.error("Gagal membaca Sheet 2. Cek Link!")
 
 elif menu == "📝 Input Laporan (Koordinator)":
     st.markdown('<div class="brand-title">INPUT LAPORAN</div>', unsafe_allow_html=True)
