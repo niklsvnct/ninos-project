@@ -19,7 +19,6 @@ COL_NAMA = 'Person Name'
 COL_TIMESTAMP = 'Event Time'
 LATE_THRESHOLD = time(7, 5, 0) 
 
-# RENTANG WAKTU (SUDAH OPTIMAL)
 RENTANG_WAKTU = {
     'Pagi': ('03:00:00', '11:00:00'),
     'Siang_1': ('11:29:00', '12:30:59'),
@@ -35,69 +34,21 @@ SHEET_URL_STATUS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ2QrBN8uTRi
 GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeopdaE-lyOtFd2TUr5C3K2DWE3Syt2PaKoXMp0cmWKIFnijw/viewform?usp=header" 
 # ==========================================
 
-# --- 3. DATA DIVISI (SUDAH DIPERBAIKI 100% SESUAI MESIN) ---
+# --- 3. DATA DIVISI ---
 DATA_DIVISI = {
-    "LEADERSHIP": [
-        "Patra Anggana", "Su Adam", "Budiman Arifin", 
-        "Rifaldy Ilham Bhagaskara", "Marwan S Halid", "Budiono"
-    ],
-    "TLB": [
-        "M. Ansori", "Bayu Pratama Putra Katuwu", "Yoga Nugraha Putra Pasaribu", 
-        "Junaidi Taib", "Muhammad Rizal Amra", "Rusli Dj"
-    ],
-    "TBL": [
-        "Venesia Aprilia Ineke", "Muhammad Naufal Ramadhan", "Yuzak Gerson Puturuhu", 
-        "Muhamad Alief Wildan", "Gafur Hamisi", "Jul Akbar M. Nur", 
-        "Sarni Massiri", "Adrianto Laundang", "Wahyudi Ismail"
-    ],
-    "TRANS APRON": [
-        "Marichi Gita Rusdi", "Ilham Rahim", "Abdul Mu Iz Simal", 
-        "Dwiki Agus Saputro", "Moh. Sofyan", "Faisal M. Kadir", 
-        "Amirudin Rustam", "Faturrahman Kaunar", "Wawan Hermawan", 
-        "Rahmat Joni", "Nur Ichsan"
-    ],
-    "ATS": [
-        "Nurul Tanti", "Firlon Paembong", "Irwan Rezky Setiawan", 
-        "Yusuf Arviansyah", "Nurdahlia Is. Folaimam", "Ghaly Rabbani Panji Indra", 
-        "Ikhsan Wahyu Vebriyan", "Rizki Mahardhika Ardi Tigo", "Nikolaus Vincent Quirino"
-    ],
-    "ADM COMPLIANCE": [
-        "Yessicha Aprilyona Siregar", "Gabriela Margrith Louisa Klavert", "Aldi Saptono"
-    ],
-    "TRANSLATOR": [
-        "Wilyam Candra", "Norika Joselyn Modnissa"
-    ],
-    "AVSEC": [
-        "Andrian Maranatha", "Toni Nugroho Simarmata", "Muhamad Albi Ferano", 
-        "Andreas Charol Tandjung", "Sabadia Mahmud", "Rusdin Malagapi", 
-        "Muhamad Judhytia Winli", "Wahyu Samsudin", "Fientje Elisabeth Joseph", 
-        "Anglie Fitria Desiana Mamengko", "Dwi Purnama Bimasakti", 
-        "Windi Angriani Sulaeman", "Megawati A. Rauf"
-    ],
-    "GROUND HANDLING": [
-        "Yuda Saputra", "Tesalonika Gratia Putri Toar", "Esi Setia Ningseh", 
-        "Ardiyanto Kalatjo", "Febrianti Tikabala"
-    ],
-    "HELICOPTER": [
-        "Agung Sabar S. Taufik", "Recky Irwan R. A Arsyad", "Farok Abdul", 
-        "Achmad Rizky Ariz", "Yus Andi", "Muh. Noval Kipudjena"
-    ],
-    "AMC & TERMINAL": [
-        "Risky Sulung", "Muchamad Nur Syaifulrahman", "Muhammad Tunjung Rohmatullah", 
-        "Sunarty Fakir", "Albert Papuling", "Gibhran Fitransyah Yusri", 
-        "Muhdi R Tomia", "Riski Rifaldo Theofilus Anu", "Eko"
-    ],
-    "SAFETY OFFICER": [
-        "Hildan Ahmad Zaelani", "Abdurahim Andar"
-    ],
-    "PKP-PK": [
-        "Andreas Aritonang", "Achmad Alwan Asyhab", "Doni Eka Satria", 
-        "Yogi Prasetya Eka Winandra", "Akhsin Aditya Weza Putra", "Fardhan Ahmad Tajali", 
-        "Maikel Renato Syafaruddin", "Saldi Sandra", "Hamzah M. Ali Gani", "Marfan Mandar", 
-        "Julham Keya", "Aditya Sugiantoro Abbas", "Muhamad Usman", "M Akbar D Patty", 
-        "Daniel Freski Wangka", "Fandi M.Naser", "Agung Fadjriansyah Ano", "Deni Hendri Bobode", 
-        "Muhammad Rifai", "Idrus Arsad, SH"
-    ]
+    "LEADERSHIP": ["Patra Anggana", "Su Adam", "Budiman Arifin", "Rifaldy Ilham Bhagaskara", "Marwan S Halid", "Budiono"],
+    "TLB": ["M. Ansori", "Bayu Pratama Putra Katuwu", "Yoga Nugraha Putra Pasaribu", "Junaidi Taib", "Muhammad Rizal Amra", "Rusli Dj"],
+    "TBL": ["Venesia Aprilia Ineke", "Muhammad Naufal Ramadhan", "Yuzak Gerson Puturuhu", "Muhamad Alief Wildan", "Gafur Hamisi", "Jul Akbar M. Nur", "Sarni Massiri", "Adrianto Laundang", "Wahyudi Ismail"],
+    "TRANS APRON": ["Marichi Gita Rusdi", "Ilham Rahim", "Abdul Mu Iz Simal", "Dwiki Agus Saputro", "Moh. Sofyan", "Faisal M. Kadir", "Amirudin Rustam", "Faturrahman Kaunar", "Wawan Hermawan", "Rahmat Joni", "Nur Ichsan"],
+    "ATS": ["Nurul Tanti", "Firlon Paembong", "Irwan Rezky Setiawan", "Yusuf Arviansyah", "Nurdahlia Is. Folaimam", "Ghaly Rabbani Panji Indra", "Ikhsan Wahyu Vebriyan", "Rizki Mahardhika Ardi Tigo", "Nikolaus Vincent Quirino"],
+    "ADM COMPLIANCE": ["Yessicha Aprilyona Siregar", "Gabriela Margrith Louisa Klavert", "Aldi Saptono"],
+    "TRANSLATOR": ["Wilyam Candra", "Norika Joselyn Modnissa"],
+    "AVSEC": ["Andrian Maranatha", "Toni Nugroho Simarmata", "Muhamad Albi Ferano", "Andreas Charol Tandjung", "Sabadia Mahmud", "Rusdin Malagapi", "Muhamad Judhytia Winli", "Wahyu Samsudin", "Fientje Elisabeth Joseph", "Anglie Fitria Desiana Mamengko", "Dwi Purnama Bimasakti", "Windi Angriani Sulaeman", "Megawati A. Rauf"],
+    "GROUND HANDLING": ["Yuda Saputra", "Tesalonika Gratia Putri Toar", "Esi Setia Ningseh", "Ardiyanto Kalatjo", "Febrianti Tikabala"],
+    "HELICOPTER": ["Agung Sabar S. Taufik", "Recky Irwan R. A Arsyad", "Farok Abdul", "Achmad Rizky Ariz", "Yus Andi", "Muh. Noval Kipudjena"],
+    "AMC & TERMINAL": ["Risky Sulung", "Muchamad Nur Syaifulrahman", "Muhammad Tunjung Rohmatullah", "Sunarty Fakir", "Albert Papuling", "Gibhran Fitransyah Yusri", "Muhdi R Tomia", "Riski Rifaldo Theofilus Anu", "Eko"],
+    "SAFETY OFFICER": ["Hildan Ahmad Zaelani", "Abdurahim Andar"],
+    "PKP-PK": ["Andreas Aritonang", "Achmad Alwan Asyhab", "Doni Eka Satria", "Yogi Prasetya Eka Winandra", "Akhsin Aditya Weza Putra", "Fardhan Ahmad Tajali", "Maikel Renato Syafaruddin", "Saldi Sandra", "Hamzah M. Ali Gani", "Marfan Mandar", "Julham Keya", "Aditya Sugiantoro Abbas", "Muhamad Usman", "M Akbar D Patty", "Daniel Freski Wangka", "Fandi M.Naser", "Agung Fadjriansyah Ano", "Deni Hendri Bobode", "Muhammad Rifai", "Idrus Arsad, SH"]
 }
 
 URUTAN_NAMA_CUSTOM = []
@@ -151,15 +102,29 @@ def load_absen(url):
         df[COL_TIMESTAMP] = pd.to_datetime(df[COL_TIMESTAMP])
         df['Tanggal'] = df[COL_TIMESTAMP].dt.date; df['Waktu'] = df[COL_TIMESTAMP].dt.time
         return df
-    except: return None
+    except Exception as e:
+        return None
 
 @st.cache_data(ttl=10)
 def load_status(url):
     try:
         df = pd.read_csv(url)
         df = df.rename(columns=lambda x: x.strip())
-        df['Nama Karyawan'] = df['Nama Karyawan'].astype(str).str.strip()
-        df['Tanggal'] = pd.to_datetime(df['Tanggal'], format='mixed', dayfirst=False).dt.date
+        
+        # --- UPDATE V.29: LOGIKA PEMECAH NAMA (BULK CHECKBOX) ---
+        # 1. Konversi kolom nama ke string
+        df['Nama Karyawan'] = df['Nama Karyawan'].astype(str)
+        
+        # 2. Pecah nama yang dipisah koma (Misal: "Andi, Budi, Citra")
+        # Menjadi baris-baris terpisah
+        df = df.assign(Nama_Karyawan=df['Nama Karyawan'].str.split(',')).explode('Nama Karyawan')
+        
+        # 3. Bersihkan spasi setelah dipecah
+        df['Nama Karyawan'] = df['Nama Karyawan'].str.strip()
+        
+        # ---------------------------------------------------------
+        
+        df['Tanggal'] = pd.to_datetime(df['Tanggal'], format='mixed', dayfirst=False, errors='coerce').dt.date
         df['Keterangan'] = df['Keterangan'].astype(str).str.strip().str.upper()
         return df
     except Exception as e:
@@ -184,7 +149,7 @@ if menu == "📊 Dashboard Monitoring":
     df_status = load_status(SHEET_URL_STATUS)
 
     if df_absen is None:
-        st.warning("⚠️ Data Absensi Mesin belum terbaca / kosong. Cek Link CSV.")
+        st.warning("⚠️ Data Absensi Mesin belum terbaca / kosong.")
         df_absen = pd.DataFrame(columns=[COL_NAMA, COL_TIMESTAMP, 'Tanggal', 'Waktu'])
 
     c1, c2 = st.columns([1, 3])
@@ -206,6 +171,8 @@ if menu == "📊 Dashboard Monitoring":
                 df_status['Tanggal_Str'] = df_status['Tanggal'].astype(str)
             df_stat_today = df_status[df_status['Tanggal_Str'] == sel_date_str]
             if not df_stat_today.empty:
+                # Drop duplicates biar kalau ada nama dobel dipecah gak error
+                df_stat_today = df_stat_today.drop_duplicates(subset=['Nama Karyawan'])
                 status_today = pd.Series(df_stat_today.Keterangan.values, index=df_stat_today['Nama Karyawan']).to_dict()
 
         if df_today.empty: 
@@ -222,6 +189,7 @@ if menu == "📊 Dashboard Monitoring":
             if col not in df_final.columns: df_final[col] = ''
         df_final[list(RENTANG_WAKTU.keys())] = df_final[list(RENTANG_WAKTU.keys())].fillna('')
 
+        # METRIK
         total_emp = len(df_final); on_time_count = 0; late_count = 0; izin_count = 0; bolos_count = 0
         list_terlambat = []; list_izin = []; list_bolos = []
         
@@ -336,6 +304,22 @@ if menu == "📊 Dashboard Monitoring":
                                         c2.metric("Siang 2", row['Siang_2'] if row['Siang_2'] else "❌"); c2.metric("Sore", row['Sore'] if row['Sore'] else "❌")
 
     else: st.info("Menghubungkan Database...")
+    
+    st.divider()
+    with st.expander("🛠️ DEBUG MODE: Cek Data Izin", expanded=False):
+        if df_status is not None:
+            st.write(f"Mencari Data Tanggal: {sel_date} (String: {sel_date.strftime('%Y-%m-%d')})")
+            if 'Tanggal_Str' not in df_status.columns: df_status['Tanggal_Str'] = df_status['Tanggal'].astype(str)
+            cek_tgl = df_status[df_status['Tanggal_Str'] == sel_date.strftime('%Y-%m-%d')]
+            if cek_tgl.empty:
+                st.error(f"TIDAK DITEMUKAN data izin untuk tanggal {sel_date}.")
+                st.write("Data Mentah (Tail 5):")
+                st.dataframe(df_status.tail(5))
+            else:
+                st.success(f"DITEMUKAN {len(cek_tgl)} data izin.")
+                st.dataframe(cek_tgl)
+        else:
+            st.error("Gagal membaca Sheet 2.")
 
 elif menu == "📝 Input Laporan (Koordinator)":
     st.markdown('<div class="brand-title">INPUT LAPORAN</div>', unsafe_allow_html=True)
