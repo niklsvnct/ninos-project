@@ -6,7 +6,7 @@ import time as t_sleep
 import xlsxwriter
 import streamlit.components.v1 as components
 
-# --- 1. KONFIGURASI HALAMAN ---
+# --- KONFIGURASI HALAMAN ---
 st.set_page_config(
     page_title="Nino's Project - Command Center",
     page_icon="⚡",
@@ -14,48 +14,18 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- 2. SETUP VARIABEL UTAMA (JANGAN DIHAPUS!) ---
-COL_NAMA = 'Person Name'
-COL_TIMESTAMP = 'Event Time'
-LATE_THRESHOLD = time(7, 5, 0) 
-
-RENTANG_WAKTU = {
-    'Pagi': ('05:00:00', '09:00:00'),
-    'Siang_1': ('11:29:00', '12:30:59'),
-    'Siang_2': ('12:31:00', '13:30:59'),
-    'Sore': ('17:00:00', '23:59:59')
-}
-
 # ==========================================
-# 👇 PASTE LINK DATABASE BAPAK DISINI 👇
+# 👇 LINK DATABASE SUDAH SAYA MASUKKAN 👇
 # ==========================================
 SHEET_URL_ABSEN = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_GhoIb1riX98FsP8W4f2-_dH_PLcLDZskjNOyDcnnvOhBg8FUp3xJ-c_YgV0Pw71k4STy4rR0_MS5/pub?output=csv"
 SHEET_URL_STATUS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ2QrBN8uTRiHINCEcZBrbdU-gzJ4pN2UljoqYG6NMoUQIK02yj_D1EdlxdPr82Pbr94v2o6V0Vh3Kt/pub?gid=511860805&single=true&output=csv"
 GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeopdaE-lyOtFd2TUr5C3K2DWE3Syt2PaKoXMp0cmWKIFnijw/viewform?usp=header" 
 # ==========================================
 
-# --- 3. DATA DIVISI & NAMA ---
-DATA_DIVISI = {
-    "SPT&SPV": ["Patra Anggana", "Su Adam", "Budiman Arifin", "Rifaldy Ilham Bhagaskara", "Marwan S Halid", "Budiono"],
-    "TLB": ["M. Ansori", "Bayu Pratama Putra Katuwu", "Yoga Nugraha Putra Pasaribu", "Junaidi Taib", "Muhammad Rizal Amra", "Rusli Dj"],
-    "TBL": ["Venesia Aprilia Ineke", "Muhammad Naufal Ramadhan", "Yuzak Gerson Puturuhu", "Muhamad Alief Wildan", "Gafur Hamisi", "Jul Akbar M. Nur", "Sarni Massiri", "Adrianto Laundang", "Wahyudi Ismail"],
-    "TRANS APRON": ["Marichi Gita Rusdi", "Ilham Rahim", "Abdul Mu'Iz Simal", "Dwiki Agus Saputro", "Moh. Sofyan", "Faisal M. Kadir", "Amirudin Rustam", "Faturrahman Kaunar", "Wawan Hermawan", "Rahmat Joni", "Nur Ichsan"],
-    "ATS": ["Nurultanti", "Firlon Paembong", "Irwan Rezky Setiawan", "Yusuf Arviansyah", "Nurdahlia Is. Folaimam", "Ghaly Rabbani Panji Indra", "Ikhsan Wahyu Vebriyan", "Rizki Mahardhika Ardi Tigo", "Nikolaus Vincent Quirino"],
-    "ADM COMPLIANCE": ["Yessicha Aprilyona Siregar", "Gabriela Margrith Louisa Klavert", "Aldi Saptono"],
-    "TRANSLATOR": ["Wilyam Candra", "Norika Joselyn Modnissa"],
-    "AVSEC": ["Andrian Maranatha", "Toni Nugroho Simarmata", "Muhamad Albi Ferano", "Andreas Charol Tandjung", "Sabadia Mahmud", "Rusdin Malagapi", "Muhamad Judhytia Winli", "Wahyu Samsudin", "Fientje Elisabeth Joseph", "Anglie Fitria Desiana Mamengko", "Dwi Purnama Bimasakti", "Windi Angriani Sulaeman", "Megawati A. Rauf"],
-    "GROUND HANDLING": ["Yuda Saputra.", "Tesalonika Gratia Putri Toar", "Esi Setia Ningseh", "Ardiyanto Kalatjo", "Febrianti Tikabala"],
-    "HELICOPTER": ["Agung Sabar Santoso Taufik", "Recky Irwan R. A Arsyad", "Farok Abdul", "Achmad Rizky Ariz", "Yus Andi", "Muh. Noval Kipudjena"],
-    "AMC & TERMINAL": ["Risky Sulung", "Muchamad Nur Syaifulrahman", "Muhammad Tunjung Rohmatullah", "Sunarty Fakir", "Albert Papuling", "Gibhran Fitransyah Yusri", "Muhdi R Tomia", "Riski Rifaldo Theofilus Anu", "Eko"],
-    "SAFETY OFFICER": ["Hildan Ahmad Zaelani", "Abdurahim Andar"],
-    "PKP-PK": ["Andreas Aritonang", "Achmad Alwan Asyhab", "Doni Eka", "Yogi Prasetya Eka Winandra", "Akhsin Aditya Weza Putra", "Fardhan Ahmad Tajali", "Maikel R", "Saldi Sandra", "Hamzah M Ali Gani", "Marfan Mandar", "Julham Keya", "Aditya Sugiantoro A", "M.Usman", "M.Akbar Patty", "Daniel Freski W", "Fandi M Naser", "Agung F", "Deni Hendri", "M Rifai", "Idrus Arsad"]
-}
+# SETTING BATAS TERLAMBAT
+LATE_THRESHOLD = time(7, 5, 0) 
 
-URUTAN_NAMA_CUSTOM = []
-for unit, members in DATA_DIVISI.items():
-    URUTAN_NAMA_CUSTOM.extend(members)
-
-# --- 4. CSS STYLE ---
+# --- CSS STYLE ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;800&family=JetBrains+Mono:wght@400;700&display=swap');
@@ -82,7 +52,32 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 5. FUNGSI LOGIKA ---
+# --- DATA SETUP ---
+COL_NAMA = 'Person Name'
+COL_TIMESTAMP = 'Event Time'
+RENTANG_WAKTU = {'Pagi': ('05:00:00', '09:00:00'), 'Siang_1': ('11:29:00', '12:30:59'), 'Siang_2': ('12:31:00', '13:30:59'), 'Sore': ('17:00:00', '23:59:59')}
+
+DATA_DIVISI = {
+    "SPT&SPV": ["Patra Anggana", "Su Adam", "Budiman Arifin", "Rifaldy Ilham Bhagaskara", "Marwan S Halid", "Budiono"],
+    "TLB": ["M. Ansori", "Bayu Pratama Putra Katuwu", "Yoga Nugraha Putra Pasaribu", "Junaidi Taib", "Muhammad Rizal Amra", "Rusli Dj"],
+    "TBL": ["Venesia Aprilia Ineke", "Muhammad Naufal Ramadhan", "Yuzak Gerson Puturuhu", "Muhamad Alief Wildan", "Gafur Hamisi", "Jul Akbar M. Nur", "Sarni Massiri", "Adrianto Laundang", "Wahyudi Ismail"],
+    "TRANS APRON": ["Marichi Gita Rusdi", "Ilham Rahim", "Abdul Mu'Iz Simal", "Dwiki Agus Saputro", "Moh. Sofyan", "Faisal M. Kadir", "Amirudin Rustam", "Faturrahman Kaunar", "Wawan Hermawan", "Rahmat Joni", "Nur Ichsan"],
+    "ATS": ["Nurultanti", "Firlon Paembong", "Irwan Rezky Setiawan", "Yusuf Arviansyah", "Nurdahlia Is. Folaimam", "Ghaly Rabbani Panji Indra", "Ikhsan Wahyu Vebriyan", "Rizki Mahardhika Ardi Tigo", "Nikolaus Vincent Quirino"],
+    "ADM COMPLIANCE": ["Yessicha Aprilyona Siregar", "Gabriela Margrith Louisa Klavert", "Aldi Saptono"],
+    "TRANSLATOR": ["Wilyam Candra", "Norika Joselyn Modnissa"],
+    "AVSEC": ["Andrian Maranatha", "Toni Nugroho Simarmata", "Muhamad Albi Ferano", "Andreas Charol Tandjung", "Sabadia Mahmud", "Rusdin Malagapi", "Muhamad Judhytia Winli", "Wahyu Samsudin", "Fientje Elisabeth Joseph", "Anglie Fitria Desiana Mamengko", "Dwi Purnama Bimasakti", "Windi Angriani Sulaeman", "Megawati A. Rauf"],
+    "GROUND HANDLING": ["Yuda Saputra.", "Tesalonika Gratia Putri Toar", "Esi Setia Ningseh", "Ardiyanto Kalatjo", "Febrianti Tikabala"],
+    "HELICOPTER": ["Agung Sabar Santoso Taufik", "Recky Irwan R. A Arsyad", "Farok Abdul", "Achmad Rizky Ariz", "Yus Andi", "Muh. Noval Kipudjena"],
+    "AMC & TERMINAL": ["Risky Sulung", "Muchamad Nur Syaifulrahman", "Muhammad Tunjung Rohmatullah", "Sunarty Fakir", "Albert Papuling", "Gibhran Fitransyah Yusri", "Muhdi R Tomia", "Riski Rifaldo Theofilus Anu", "Eko"],
+    "SAFETY OFFICER": ["Hildan Ahmad Zaelani", "Abdurahim Andar"],
+    "PKP-PK": ["Andreas Aritonang", "Achmad Alwan Asyhab", "Doni Eka", "Yogi Prasetya Eka Winandra", "Akhsin Aditya Weza Putra", "Fardhan Ahmad Tajali", "Maikel R", "Saldi Sandra", "Hamzah M Ali Gani", "Marfan Mandar", "Julham Keya", "Aditya Sugiantoro A", "M.Usman", "M.Akbar Patty", "Daniel Freski W", "Fandi M Naser", "Agung F", "Deni Hendri", "M Rifai", "Idrus Arsad"]
+}
+
+URUTAN_NAMA_CUSTOM = []
+for unit, members in DATA_DIVISI.items():
+    URUTAN_NAMA_CUSTOM.extend(members)
+
+# --- HELPER FUNCTIONS ---
 def get_min_time_in_range(group, s, e):
     st_t = time.fromisoformat(s); end_t = time.fromisoformat(e)
     filtered = group[(group['Waktu'] >= st_t) & (group['Waktu'] <= end_t)]
@@ -97,12 +92,9 @@ def is_late(time_str):
 def load_absen(url):
     try:
         df = pd.read_csv(url); df.columns = df.columns.str.strip()
-        
-        # DETEKTIF ERROR: Cek Kolom
         if COL_NAMA not in df.columns:
-            st.error(f"❌ Gagal Baca Absen: Kolom '{COL_NAMA}' tidak ditemukan. Cek Sheet Absensi!")
+            st.error(f"❌ Gagal Baca Absen: Kolom '{COL_NAMA}' tidak ditemukan.")
             return None
-            
         df[COL_NAMA] = df[COL_NAMA].astype(str).str.strip(); df = df[df[COL_NAMA] != ''].copy()
         df[COL_TIMESTAMP] = pd.to_datetime(df[COL_TIMESTAMP])
         df['Tanggal'] = df[COL_TIMESTAMP].dt.date; df['Waktu'] = df[COL_TIMESTAMP].dt.time
@@ -115,22 +107,20 @@ def load_absen(url):
 def load_status(url):
     try:
         df = pd.read_csv(url)
-        df = df.rename(columns=lambda x: x.strip()) # Bersihkan spasi header
-        
-        # Mapping Nama Kolom (Jaga-jaga user salah ketik di Sheet 2)
-        # Pastikan di Sheet 2 header kolomnya: 'Tanggal', 'Nama Karyawan', 'Keterangan'
-        
+        df = df.rename(columns=lambda x: x.strip())
         df['Nama Karyawan'] = df['Nama Karyawan'].astype(str).str.strip()
-        # Format Tanggal (DayFirst=False karena sheet google biasanya M/D/Y)
+        
+        # --- FIX TANGGAL 11/8/2025 ---
+        # dayfirst=False artinya formatnya Bulan/Tanggal/Tahun (M/D/Y)
         df['Tanggal'] = pd.to_datetime(df['Tanggal'], format='mixed', dayfirst=False).dt.date
+        
         df['Keterangan'] = df['Keterangan'].astype(str).str.strip().str.upper()
         return df
     except Exception as e:
-        st.error(f"❌ Error Load Status (Sheet 2): {e}")
         return None
 
 # ==========================================
-# --- 6. APLIKASI UTAMA (NAVIGASI) ---
+# --- APLIKASI UTAMA ---
 # ==========================================
 
 with st.sidebar:
@@ -147,10 +137,8 @@ if menu == "📊 Dashboard Monitoring":
     df_absen = load_absen(SHEET_URL_ABSEN)
     df_status = load_status(SHEET_URL_STATUS)
 
-    # JIKA ABSEN MESIN GAGAL LOAD, TAMPILKAN PESAN TAPI JANGAN CRASH
     if df_absen is None:
-        st.warning("⚠️ Data Absensi Mesin (Link 1) belum terbaca / kosong. Cek koneksi.")
-        # Buat dataframe kosong biar gak error
+        st.warning("⚠️ Data Absensi Mesin belum terbaca / kosong. Cek koneksi.")
         df_absen = pd.DataFrame(columns=[COL_NAMA, COL_TIMESTAMP, 'Tanggal', 'Waktu'])
 
     c1, c2 = st.columns([1, 3])
@@ -166,16 +154,13 @@ if menu == "📊 Dashboard Monitoring":
     st.markdown("---")
 
     if sel_date:
-        # FILTER TANGGAL
         df_today = df_absen[df_absen['Tanggal'] == sel_date]
-        
         status_today = {}
         if df_status is not None:
             df_stat_today = df_status[df_status['Tanggal'] == sel_date]
             if not df_stat_today.empty:
                 status_today = pd.Series(df_stat_today.Keterangan.values, index=df_stat_today['Nama Karyawan']).to_dict()
 
-        # REKAP DATA MESIN
         if df_today.empty: 
             df_res = pd.DataFrame(columns=[COL_NAMA]) 
         else:
@@ -185,13 +170,12 @@ if menu == "📊 Dashboard Monitoring":
             df_res = pd.DataFrame(recap_dict).reset_index()
             if not df_res.empty: df_res.rename(columns={COL_NAMA: 'Nama Karyawan'}, inplace=True)
         
-        # GABUNG KE MASTER LIST
         df_final = pd.merge(pd.DataFrame({'Nama Karyawan': URUTAN_NAMA_CUSTOM}), df_res, on='Nama Karyawan', how='left')
         for col in list(RENTANG_WAKTU.keys()):
             if col not in df_final.columns: df_final[col] = ''
         df_final[list(RENTANG_WAKTU.keys())] = df_final[list(RENTANG_WAKTU.keys())].fillna('')
 
-        # METRIK HITUNGAN
+        # METRIK
         total_emp = len(df_final); on_time_count = 0; late_count = 0; izin_count = 0; bolos_count = 0
         list_terlambat = []; list_izin = []; list_bolos = []
         
@@ -240,7 +224,7 @@ if menu == "📊 Dashboard Monitoring":
 
         st.markdown("---")
         
-        # DOWNLOAD EXCEL
+        # DOWNLOAD
         out = io.BytesIO()
         wb = xlsxwriter.Workbook(out, {'in_memory': True})
         ws = wb.add_worksheet('Rekap')
@@ -274,39 +258,40 @@ if menu == "📊 Dashboard Monitoring":
         
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # ==========================================
-        # 🔥 DETAIL PER UNIT (DROPDOWN DIVISI) 🔥
-        # ==========================================
-        st.markdown("### 📁 DETAIL PER UNIT")
-        for unit_name, member_list in DATA_DIVISI.items():
-            member_count = len(member_list)
-            df_unit = df_final[df_final['Nama Karyawan'].isin(member_list)]
-            if search_q: df_unit = df_unit[df_unit['Nama Karyawan'].str.contains(search_q, case=False, na=False)]
+        # CARD GRID
+        with st.expander("🔽 Tampilan Semua detail absen karyawan", expanded=False):
+            st.markdown("### 📁 DETAIL PER UNIT")
+            for unit_name, member_list in DATA_DIVISI.items():
+                member_count = len(member_list)
+                df_unit = df_final[df_final['Nama Karyawan'].isin(member_list)]
+                if search_q: df_unit = df_unit[df_unit['Nama Karyawan'].str.contains(search_q, case=False, na=False)]
 
-            with st.expander(f"📂 {unit_name} ({len(df_unit)}/{member_count} Personil)", expanded=False):
-                if df_unit.empty: st.info(f"Tidak ada data karyawan di unit {unit_name}")
-                else:
-                    COLS = 4; rows = [df_unit.iloc[i:i+COLS] for i in range(0, len(df_unit), COLS)]
-                    for r in rows:
-                        cols = st.columns(COLS)
-                        for i, (idx, row) in enumerate(r.iterrows()):
-                            with cols[i]:
-                                nm = row['Nama Karyawan']; pagi = row['Pagi']; times = [pagi, row['Siang_1'], row['Siang_2'], row['Sore']]; empty = sum(1 for t in times if t == '')
-                                manual_stat = status_today.get(nm, "")
-                                if manual_stat: lbl = f"ℹ️ {manual_stat}"; theme = "card-permit"; clr = "#d580ff"
-                                elif empty == 4: lbl = "⛔ TOTAL ABSENT"; theme = "card-absent"; clr = "#FF416C"
-                                elif empty > 0: lbl = "⚠️ PARTIAL"; theme = "card-partial"; clr = "#FFC837"
-                                else: lbl = "✅ FULL PRESENT"; theme = "card-present"; clr = "#00f260"
-                                late_html = '<span class="late-indicator">⏰ LATE</span>' if (pagi and is_late(pagi)) else ""
-                                avt = f"https://ui-avatars.com/api/?name={nm.replace(' ', '+')}&background=random&color=fff"
-                                st.markdown(f"<div class='card {theme}'><div class='card-header'><img src='{avt}' class='avatar'><div><p class='card-name'>{nm}</p><p class='card-id'>NP-{100+idx}</p></div></div><div class='detail-row'><span class='label'>Datang</span><span><span class='value'>{pagi if pagi else '-'}</span> {late_html}</span></div><div class='detail-row'><span class='label'>Pulang</span><span class='value'>{row['Sore'] if row['Sore'] else '-'}</span></div><div style='text-align:right; font-size:0.7rem; font-weight:bold; color:{clr}; margin-top:10px;'>{lbl}</div></div>", unsafe_allow_html=True)
-                                with st.popover("Detail", use_container_width=True):
-                                    if manual_stat: st.info(f"Status: {manual_stat}")
-                                    c1, c2 = st.columns(2)
-                                    p_val = pagi if pagi else "❌"; 
-                                    if is_late(pagi): p_val += " (Telat)"
-                                    c1.metric("Pagi", p_val); c1.metric("Siang 1", row['Siang_1'] if row['Siang_1'] else "❌")
-                                    c2.metric("Siang 2", row['Siang_2'] if row['Siang_2'] else "❌"); c2.metric("Sore", row['Sore'] if row['Sore'] else "❌")
+                with st.expander(f"📂 {unit_name} ({len(df_unit)}/{member_count} Personil)", expanded=False):
+                    if df_unit.empty: st.info(f"Tidak ada data karyawan di unit {unit_name}")
+                    else:
+                        COLS = 4; rows = [df_unit.iloc[i:i+COLS] for i in range(0, len(df_unit), COLS)]
+                        for r in rows:
+                            cols = st.columns(COLS)
+                            for i, (idx, row) in enumerate(r.iterrows()):
+                                with cols[i]:
+                                    nm = row['Nama Karyawan']; pagi = row['Pagi']; times = [pagi, row['Siang_1'], row['Siang_2'], row['Sore']]; empty = sum(1 for t in times if t == '')
+                                    manual_stat = status_today.get(nm, "")
+                                    if manual_stat: lbl = f"ℹ️ {manual_stat}"; theme = "card-permit"; clr = "#d580ff"
+                                    elif empty == 4: lbl = "⛔ TOTAL ABSENT"; theme = "card-absent"; clr = "#FF416C"
+                                    elif empty > 0: lbl = "⚠️ PARTIAL"; theme = "card-partial"; clr = "#FFC837"
+                                    else: lbl = "✅ FULL PRESENT"; theme = "card-present"; clr = "#00f260"
+                                    late_html = '<span class="late-indicator">⏰ LATE</span>' if (pagi and is_late(pagi)) else ""
+                                    avt = f"https://ui-avatars.com/api/?name={nm.replace(' ', '+')}&background=random&color=fff"
+                                    st.markdown(f"<div class='card {theme}'><div class='card-header'><img src='{avt}' class='avatar'><div><p class='card-name'>{nm}</p><p class='card-id'>NP-{100+idx}</p></div></div><div class='detail-row'><span class='label'>Datang</span><span><span class='value'>{pagi if pagi else '-'}</span> {late_html}</span></div><div class='detail-row'><span class='label'>Pulang</span><span class='value'>{row['Sore'] if row['Sore'] else '-'}</span></div><div style='text-align:right; font-size:0.7rem; font-weight:bold; color:{clr}; margin-top:10px;'>{lbl}</div></div>", unsafe_allow_html=True)
+                                    with st.popover("Detail", use_container_width=True):
+                                        if manual_stat: st.info(f"Status: {manual_stat}")
+                                        c1, c2 = st.columns(2)
+                                        p_val = pagi if pagi else "❌"; 
+                                        if is_late(pagi): p_val += " (Telat)"
+                                        c1.metric("Pagi", p_val); c1.metric("Siang 1", row['Siang_1'] if row['Siang_1'] else "❌")
+                                        c2.metric("Siang 2", row['Siang_2'] if row['Siang_2'] else "❌"); c2.metric("Sore", row['Sore'] if row['Sore'] else "❌")
+
+    else: st.info("Menghubungkan Database...")
 
 elif menu == "📝 Input Laporan (Koordinator)":
     st.markdown('<div class="brand-title">INPUT LAPORAN</div>', unsafe_allow_html=True)
