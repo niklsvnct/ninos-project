@@ -2,7 +2,7 @@
 ================================================================================
 WEDABAY AIRPORT ABSENCE CENTER - ENTERPRISE PERSONNEL MONITORING SYSTEM
 ================================================================================
-Version: 2.0.1 (Image Replication Build)
+Version: 2.0.1 (Image Replication Build - Fixed)
 Architecture: Clean Architecture with MVC Pattern
 ================================================================================
 """
@@ -184,190 +184,69 @@ class DivisionRegistry:
     def get_all_members(cls) -> List[str]:
         """Get all employee names across all divisions."""
         members = []
-        for division in cls._divisions.values():
+        
+        # 1. Pastikan urutan divisi berdasarkan Priority (1, 2, 3...)
+        # Ini supaya SPT & SPV (Patra, Su Adam) selalu paling atas
+        sorted_divisions = sorted(cls._divisions.values(), key=lambda x: x.priority)
+        
+        for division in sorted_divisions:
             members.extend(division.members)
-        return sorted(set(members))
+            
+        # 2. Hapus nama ganda TAPI JANGAN di-sort A-Z. 
+        # Kita pakai trik 'dict.fromkeys' agar urutan Patra, Su Adam, dst tetap terjaga.
+        return list(dict.fromkeys(members))
 
 
 # Initialize Division Registry with actual data
 def initialize_divisions():
     """
-    Initialize all division configurations.
-    Separated from class definition for better organization.
+    Initialize all division configurations with CUSTOM SORT ORDER defined by User.
     """
-    
     divisions_data = [
-        DivisionConfig(
-            name="SPT & SPV",
-            color="#FFD700",
-            icon="👨‍✈️",
-            code="SPT & SPV",
-            description="SPT & SPV",
-            priority=1,
-            members=[
-                "Patra Anggana", "Su Adam", "Budiman Arifin", 
-                "Rifaldy Ilham Bhagaskara", "Marwan S Halid", "Budiono"
-            ]
-        ),
-        DivisionConfig(
-            name="TLB",
-            color="#00A8FF",
-            icon="🔧",
-            code="TLB",
-            description="Teknik Listrik Bandara",
-            priority=2,
-            members=[
-                "M. Ansori", "Bayu Pratama Putra Katuwu", "Yoga Nugraha Putra Pasaribu",
-                "Junaidi Taib", "Muhammad Rizal Amra", "Rusli Dj"
-            ]
-        ),
-        DivisionConfig(
-            name="TBL",
-            color="#0097e6",
-            icon="📦",
-            code="TBL",
-            description="Teknik Bangunan Dan Landasan",
-            priority=3,
-            members=[
-                "Venesia Aprilia Ineke", "Muhammad Naufal Ramadhan", "Yuzak Gerson Puturuhu",
-                "Muhamad Alief Wildan", "Gafur Hamisi", "Jul Akbar M. Nur",
-                "Sarni Massiri", "Adrianto Laundang", "Wahyudi Ismail"
-            ]
-        ),
-        DivisionConfig(
-            name="TRANS APRON",
-            color="#e1b12c",
-            icon="🚌",
-            code="APR",
-            description="Trans Apron",
-            priority=4,
-            members=[
-                "Marichi Gita Rusdi", "Ilham Rahim", "Abdul Mu Iz Simal",
-                "Dwiki Agus Saputro", "Moh. Sofyan", "Faisal M. Kadir",
-                "Amirudin Rustam", "Faturrahman Kaunar", "Wawan Hermawan",
-                "Rahmat Joni", "Nur Ichsan"
-            ]
-        ),
-        DivisionConfig(
-            name="ATS",
-            color="#44bd32",
-            icon="📡",
-            code="ATS",
-            description="Air Traffic Services",
-            priority=5,
-            members=[
-                "Nurul Tanti", "Firlon Paembong", "Irwan Rezky Setiawan",
-                "Yusuf Arviansyah", "Nurdahlia Is. Folaimam", "Ghaly Rabbani Panji Indra",
-                "Ikhsan Wahyu Vebriyan", "Rizki Mahardhika Ardi Tigo", "Nikolaus Vincent Quirino"
-            ]
-        ),
-        DivisionConfig(
-            name="ADM COMPLIANCE",
-            color="#8c7ae6",
-            icon="📋",
-            code="ADM",
-            description="Administration & Compliance",
-            priority=6,
-            members=[
-                "Yessicha Aprilyona Siregar", "Gabriela Margrith Louisa Klavert", "Aldi Saptono"
-            ]
-        ),
-        DivisionConfig(
-            name="TRANSLATOR",
-            color="#00cec9",
-            icon="🎧",
-            code="TRN",
-            description="Translation Services",
-            priority=7,
-            members=["Wilyam Candra", "Norika Joselyn Modnissa"]
-        ),
-        DivisionConfig(
-            name="AVSEC",
-            color="#c23616",
-            icon="🛡️",
-            code="SEC",
-            description="Aviation Security",
-            priority=8,
-            members=[
-                "Andrian Maranatha", "Toni Nugroho Simarmata", "Muhamad Albi Ferano",
-                "Andreas Charol Tandjung", "Sabadia Mahmud", "Rusdin Malagapi",
-                "Muhamad Judhytia Winli", "Wahyu Samsudin", "Fientje Elisabeth Joseph",
-                "Anglie Fitria Desiana Mamengko", "Dwi Purnama Bimasakti",
-                "Windi Angriani Sulaeman", "Megawati A. Rauf"
-            ]
-        ),
-        DivisionConfig(
-            name="GROUND HANDLING",
-            color="#e17055",
-            icon="🚜",
-            code="GND",
-            description="Ground Handling Operations",
-            priority=9,
-            members=[
-                "Yuda Saputra", "Tesalonika Gratia Putri Toar", "Esi Setia Ningseh",
-                "Ardiyanto Kalatjo", "Febrianti Tikabala"
-            ]
-        ),
-        DivisionConfig(
-            name="HELICOPTER",
-            color="#6c5ce7",
-            icon="🚁",
-            code="HEL",
-            description="Helicopter Operations",
-            priority=10,
-            members=[
-                "Agung Sabar S. Taufik", "Recky Irwan R. A Arsyad", "Farok Abdul",
-                "Achmad Rizky Ariz", "Yus Andi", "Muh. Noval Kipudjena"
-            ]
-        ),
-        DivisionConfig(
-            name="AMC & TERMINAL",
-            color="#0984e3",
-            icon="🏢",
-            code="AMC",
-            description="Airport Movement Control & Terminal",
-            priority=11,
-            members=[
-                "Risky Sulung", "Muchamad Nur Syaifulrahman", "Muhammad Tunjung Rohmatullah",
-                "Sunarty Fakir", "Albert Papuling", "Gibhran Fitransyah Yusri",
-                "Muhdi R Tomia", "Riski Rifaldo Theofilus Anu", "Eko"
-            ]
-        ),
-        DivisionConfig(
-            name="SAFETY OFFICER",
-            color="#fd79a8",
-            icon="🦺",
-            code="SFT",
-            description="Safety Operations",
-            priority=12,
-            members=["Hildan Ahmad Zaelani", "Abdurahim Andar"]
-        ),
-        DivisionConfig(
-            name="PKP-PK",
-            color="#fab1a0",
-            icon="🚒",
-            code="RES",
-            description="Fire & Rescue Services",
-            priority=13,
-            members=[
-                "Andreas Aritonang", "Achmad Alwan Asyhab", "Doni Eka Satria",
-                "Yogi Prasetya Eka Winandra", "Akhsin Aditya Weza Putra", "Fardhan Ahmad Tajali",
-                "Maikel Renato Syafaruddin", "Saldi Sandra", "Hamzah M. Ali Gani",
-                "Marfan Mandar", "Julham Keya", "Aditya Sugiantoro Abbas",
-                "Muhamad Usman", "M Akbar D Patty", "Daniel Freski Wangka",
-                "Fandi M.Naser", "Agung Fadjriansyah Ano", "Deni Hendri Bobode",
-                "Muhammad Rifai", "Idrus Arsad, SH"
-            ]
-        )
+        DivisionConfig("SPT & SPV", "#FFD700", "👨‍✈️", "SPT & SPV", description="SPT & SPV", priority=1, 
+                       members=["Patra Anggana", "Su Adam", "Budiman Arifin", "Rifaldy Ilham Bhagaskara", "Marwan S Halid", "Budiono"]),
+        
+        DivisionConfig("TLB", "#00A8FF", "🔧", "TLB", description="Teknik Listrik Bandara", priority=2, 
+                       members=["M. Ansori", "Bayu Pratama Putra Katuwu", "Yoga Nugraha Putra Pasaribu", "Junaidi Taib", "Muhammad Rizal Amra", "Rusli Dj"]),
+        
+        DivisionConfig("TBL", "#0097e6", "📦", "TBL", description="Teknik Bangunan Dan Landasan", priority=3, 
+                       members=["Venesia Aprilia Ineke", "Muhammad Naufal Ramadhan", "Yuzak Gerson Puturuhu", "Muhamad Alief Wildan", "Gafur Hamisi", "Jul Akbar M. Nur", "Sarni Massiri", "Adrianto Laundang", "Wahyudi Ismail"]),
+        
+        DivisionConfig("TRANS APRON", "#e1b12c", "🚌", "APR", description="Trans Apron", priority=4, 
+                       members=["Marichi Gita Rusdi", "Ilham Rahim", "Abdul Mu Iz Simal", "Dwiki Agus Saputro", "Moh. Sofyan", "Faisal M. Kadir", "Amirudin Rustam", "Faturrahman Kaunar", "Wawan Hermawan", "Rahmat Joni", "Nur Ichsan"]),
+        
+        DivisionConfig("ATS", "#44bd32", "📡", "ATS", description="Air Traffic Services", priority=5, 
+                       members=["Nurultanti", "Firlon Paembong", "Irwan Rezky Setiawan", "Yusuf Arviansyah", "Nurdahlia Is. Folaimam", "Ghaly Rabbani Panji Indra", "Ikhsan Wahyu Vebriyan", "Rizki Mahardhika Ardi Tigo", "Nikolaus Vincent Quirino"]),
+        
+        DivisionConfig("ADM COMPLIANCE", "#8c7ae6", "📋", "ADM", description="Administration & Compliance", priority=6, 
+                       members=["Yessicha Aprilyona Siregar", "Gabriela Margrith Louisa Klavert", "Aldi Saptono"]),
+        
+        DivisionConfig("TRANSLATOR", "#00cec9", "🎧", "TRN", description="Translation Services", priority=7, 
+                       members=["Wilyam Candra", "Norika Joselyn Modnissa"]),
+        
+        DivisionConfig("AVSEC", "#c23616", "🛡️", "SEC", description="Aviation Security", priority=8, 
+                       members=["Andrian Maranatha", "Toni Nugroho Simarmata", "Muhamad Albi Ferano", "Andreas Charol Tandjung", "Sabadia Mahmud", "Rusdin Malagapi", "Muhamad Judhytia Winli", "Wahyu Samsudin", "Fientje Elisabeth Joseph", "Anglie Fitria Desiana Mamengko", "Dwi Purnama Bimasakti", "Windi Angriani Sulaeman", "Megawati A. Rauf"]),
+        
+        DivisionConfig("GROUND HANDLING", "#e17055", "🚜", "GND", description="Ground Handling Operations", priority=9, 
+                       members=["Yuda Saputra", "Tesalonika Gratia Putri Toar", "Esi Setia Ningseh", "Ardiyanto Kalatjo", "Febrianti Tikabala"]),
+        
+        DivisionConfig("HELICOPTER", "#6c5ce7", "🚁", "HEL", description="Helicopter Operations", priority=10, 
+                       members=["Agung Sabar S. Taufik", "Recky Irwan R. A Arsyad", "Farok Abdul", "Achmad Rizky Ariz", "Yus Andi", "Muh. Noval Kipudjena"]),
+        
+        DivisionConfig("AMC & TERMINAL", "#0984e3", "🏢", "AMC", description="Airport Movement Control & Terminal", priority=11, 
+                       members=["Risky Sulung", "Muchamad Nur Syaifulrahman", "Muhammad Tunjung Rohmatullah", "Sunarty Fakir", "Albert Papuling", "Gibhran Fitransyah Yusri", "Muhdi R Tomia", "Riski Rifaldo Theofilus Anu", "Eko"]),
+        
+        DivisionConfig("SAFETY OFFICER", "#fd79a8", "🦺", "SFT", description="Safety Operations", priority=12, 
+                       members=["Hildan Ahmad Zaelani", "Abdurahim Andar"]),
+        
+        DivisionConfig("PKP-PK", "#fab1a0", "🚒", "RES", description="Fire & Rescue Services", priority=13, 
+                       members=["Andreas Aritonang", "Achmad Alwan Asyhab", "Doni Eka Satria", "Yogi Prasetya Eka Winandra", "Akhsin Aditya Weza Putra", "Fardhan Ahmad Tajali", "Maikel Renato Syafaruddin", "Saldi Sandra", "Hamzah M. Ali Gani", "Marfan Mandar", "Julham Keya", "Aditya Sugiantoro Abbas", "Muhammad Usman", "M Akbar D Patty", "Daniel Freski Wangka", "Fandi M.Naser", "Agung Fadjriansyah Ano", "Deni Hendri Bobode", "Muhammad Rifai", "Idrus Arsad"])
     ]
-    
     for division in divisions_data:
         DivisionRegistry.register(division)
 
-
 # ================================================================================
 # SECTION 2: DATA ACCESS LAYER (REPOSITORY PATTERN)
-# (Kode di sini tidak diubah)
 # ================================================================================
 
 class DataRepository(ABC):
@@ -525,7 +404,6 @@ class StatusRepository(DataRepository):
 
 # ================================================================================
 # SECTION 3: BUSINESS LOGIC LAYER (SERVICE CLASSES)
-# (Kode di sini tidak diubah)
 # ================================================================================
 
 class TimeService:
@@ -644,25 +522,60 @@ class AttendanceService:
     def extract_time_ranges(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Extract first attendance time for each time range.
+        Robust version that handles NaN/Empty groups safely.
         """
+        # 1. Cek DataFrame kosong
         if df.empty:
             return pd.DataFrame()
         
-        time_columns = {}
-        grouped = df.groupby([AppConstants.COL_PERSON_NAME, 'Tanggal'])
+        # 2. Bersihkan Data: Hapus baris jika Nama atau Tanggal NaN/NaT
+        # Ini mencegah terbentuknya grup kosong yang menyebabkan error shape (0,0)
+        df_clean = df.dropna(subset=[AppConstants.COL_PERSON_NAME, 'Tanggal'])
         
+        if df_clean.empty:
+            return pd.DataFrame()
+        
+        # 3. Grouping
+        grouped = df_clean.groupby([AppConstants.COL_PERSON_NAME, 'Tanggal'])
+        
+        # Cek jika tidak ada grup (misal semua data terfilter)
+        if grouped.ngroups == 0:
+            return pd.DataFrame()
+        
+        time_columns = {}
         for time_range in TimeRanges:
             start_time = time.fromisoformat(time_range.start_time)
             end_time = time.fromisoformat(time_range.end_time)
             
-            time_columns[time_range.label] = grouped.apply(
+            # Apply lambda
+            result_series = grouped.apply(
                 lambda g: self._get_min_time_in_range(g, start_time, end_time)
             )
+            
+            # 4. Defensif: Paksa hasil menjadi Series 1-Dimensi
+            # Pandas kadang mengembalikan DataFrame kosong (0,0) jika hasil apply ambigu
+            if isinstance(result_series, pd.DataFrame):
+                if result_series.empty:
+                    # Buat series kosong fallback
+                    result_series = pd.Series(dtype=object)
+                else:
+                    # Ambil kolom pertama jika itu DataFrame
+                    result_series = result_series.iloc[:, 0]
+            
+            time_columns[time_range.label] = result_series
         
-        result = pd.DataFrame(time_columns).reset_index()
-        result.rename(columns={AppConstants.COL_PERSON_NAME: AppConstants.COL_EMPLOYEE_NAME}, inplace=True)
-        
-        return result
+        # 5. Cek konsistensi dictionary
+        if not time_columns:
+            return pd.DataFrame()
+
+        try:
+            # Konstruksi DataFrame Akhir
+            result = pd.DataFrame(time_columns).reset_index()
+            result.rename(columns={AppConstants.COL_PERSON_NAME: AppConstants.COL_EMPLOYEE_NAME}, inplace=True)
+            return result
+        except ValueError:
+            # Jika masih gagal karena dimensi, return kosong agar app tidak crash
+            return pd.DataFrame()
     
     def _get_min_time_in_range(
         self, 
@@ -941,7 +854,6 @@ class ExcelExporter:
 
 # ================================================================================
 # SECTION 5: UI STYLING LAYER
-# (Kode di sini tidak diubah)
 # ================================================================================
 
 class ThemeManager:
@@ -1497,7 +1409,6 @@ class ThemeManager:
 
 # ================================================================================
 # SECTION 6: UI COMPONENT LAYER
-# (Kode di sini tidak diubah)
 # ================================================================================
 
 class ComponentRenderer:
@@ -1628,7 +1539,7 @@ class ComponentRenderer:
         col1, col2 = st.columns(2)
         
         with col1:
-            st.markdown("#### 🛫 DEPARTURE TIMES")
+            st.markdown("#### 🛫 JAM DATANG")
             
             check_in = morning if morning else "❌ NOT RECORDED"
             if is_late:
@@ -1636,13 +1547,13 @@ class ComponentRenderer:
             st.info(f"**CHECK-IN:** {check_in}")
             
             break_out_display = break_out if break_out else "❌ NOT RECORDED"
-            st.write(f"**BREAK OUT:** {break_out_display}")
+            st.write(f"**Siang 1:** {break_out_display}")
         
         with col2:
-            st.markdown("#### 🛬 ARRIVAL TIMES")
+            st.markdown("#### 🛬 JAM PULANG")
             
             break_in_display = break_in if break_in else "❌ NOT RECORDED"
-            st.write(f"**BREAK IN:** {break_in_display}")
+            st.write(f"**Siang 2:** {break_in_display}")
             
             check_out = evening if evening else "❌ NOT RECORDED"
             st.success(f"**CHECK-OUT:** {check_out}")
@@ -1702,7 +1613,7 @@ class ComponentRenderer:
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            st.markdown("#### ⚠️ ALPHA")
+            st.markdown("#### ⚠️ TERLAMBAT")
             late_list = metrics['late_list']
             
             if late_list:
@@ -1769,23 +1680,16 @@ class ComponentRenderer:
         
         for tab, (div_name, div_config) in zip(tabs, divisions):
             with tab:
-                # Filter employees
-                members = div_config.members
-                df_division = df[df[AppConstants.COL_EMPLOYEE_NAME].isin(members)].copy()
-                
-                # Apply search filter
-                if search_query:
-                    df_division = df_division[
-                        df_division[AppConstants.COL_EMPLOYEE_NAME]
-                        .str.contains(search_query, case=False, na=False)
-                    ]
-                
-                if df_division.empty:
-                    st.info(f"No personnel found in {div_name}")
-                    continue
-                
                 # Division stats
                 st.markdown(f"**{div_config.description}**")
+                
+                # Get members strictly from config order (FORCED SORT ORDER)
+                ordered_members = div_config.members
+                
+                # Filter DF for this division
+                df_division = df[df[AppConstants.COL_EMPLOYEE_NAME].isin(ordered_members)].copy()
+                
+                # Calculate stats
                 present = len(df_division[df_division['Pagi'] != ''])
                 total = len(df_division)
                 rate = (present / total * 100) if total > 0 else 0
@@ -1793,16 +1697,33 @@ class ComponentRenderer:
                 st.progress(rate / 100, text=f"Attendance: {present}/{total} ({rate:.1f}%)")
                 st.markdown("<br>", unsafe_allow_html=True)
                 
-                # Render cards
+                # Apply search filter if exists
+                if search_query:
+                    ordered_members = [
+                        m for m in ordered_members 
+                        if search_query.lower() in m.lower()
+                    ]
+                
+                # Create grid
                 cols = st.columns(AppConstants.CARDS_PER_ROW)
-                for idx, (_, row) in enumerate(df_division.iterrows()):
-                    with cols[idx % AppConstants.CARDS_PER_ROW]:
-                        self.render_employee_card(row, status_dict)
-
+                card_count = 0
+                
+                # Loop through ORDERED list, not the DataFrame index
+                for member_name in ordered_members:
+                    # Find the data row for this member
+                    member_row = df_division[df_division[AppConstants.COL_EMPLOYEE_NAME] == member_name]
+                    
+                    if not member_row.empty:
+                        row_data = member_row.iloc[0]
+                        with cols[card_count % AppConstants.CARDS_PER_ROW]:
+                            self.render_employee_card(row_data, status_dict)
+                        card_count += 1
+                
+                if card_count == 0:
+                    st.info(f"No personnel found in {div_name}")
 
 # ================================================================================
 # SECTION 7: VISUALIZATION LAYER
-# (Kode di sini tidak diubah)
 # ================================================================================
 
 class ChartBuilder:
@@ -1955,7 +1876,6 @@ class ChartBuilder:
 
 # ================================================================================
 # SECTION 8: APPLICATION CONTROLLER LAYER
-# (Kode di sini tidak diubah)
 # ================================================================================
 
 class AttendanceController:
@@ -2090,8 +2010,8 @@ class AttendanceController:
         # Rename columns for display
         df_display = df_display.rename(columns={
             'Pagi': 'Check-In',
-            'Siang_1': 'Break Out',
-            'Siang_2': 'Break In',
+            'Siang_1': 'Siang 1',
+            'Siang_2': 'Siang 2',
             'Sore': 'Check-Out'
         })
         
@@ -2099,10 +2019,10 @@ class AttendanceController:
         display_columns = [
             AppConstants.COL_EMPLOYEE_NAME, 
             'Division', 
-            'Check-In', 
-            'Break Out', 
-            'Break In', 
-            'Check-Out', 
+            'Jam Datang', 
+            'Siang 1', 
+            'Siang 2', 
+            'Jam Pulang', 
             'Status'
         ]
         
@@ -2227,7 +2147,6 @@ class AttendanceController:
 
 # ================================================================================
 # SECTION 9: ADDITIONAL FEATURES & UTILITIES
-# (Kode di sini tidak diubah)
 # ================================================================================
 
 class NotificationSystem:
@@ -2433,7 +2352,7 @@ class SearchEngine:
             if col in df.columns:
                 mask |= df[col].astype(str).str.lower().str.contains(query, na=False)
         
-        return df[mask]
+        return df
     
     @staticmethod
     def filter_by_division(df: pd.DataFrame, division_name: str) -> pd.DataFrame:
@@ -2491,7 +2410,7 @@ class ReportGenerator:
         """Generate text summary report."""
         report = f"""
 ╔══════════════════════════════════════════════════════════════╗
-║     WEDABAY AIRPORT ATTENDANCE SUMMARY REPORT                ║
+║      WEDABAY AIRPORT ATTENDANCE SUMMARY REPORT               ║
 ╚══════════════════════════════════════════════════════════════╝
 
 Date: {date.strftime('%B %d, %Y')}
@@ -2577,7 +2496,6 @@ Operator: WedaBay Aviation Services
 
 # ================================================================================
 # SECTION 10: MAIN APPLICATION ENTRY POINT
-# (Kode di sini tidak diubah)
 # ================================================================================
 
 class ConfigurationManager:
@@ -2636,7 +2554,7 @@ def configure_page() -> None:
             
             Enterprise Personnel Monitoring System
             
-            © 2024 {AppConstants.COMPANY_NAME}
+            © 2025 {AppConstants.COMPANY_NAME}
             """
         }
     )
@@ -2691,7 +2609,7 @@ def render_sidebar() -> str:
         
         # Footer
         st.markdown("---")
-        st.caption(f"© 2024 {AppConstants.COMPANY_NAME}")
+        st.caption(f"© 2025 {AppConstants.COMPANY_NAME}")
         st.caption("All rights reserved")
     
     return menu
