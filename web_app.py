@@ -72,24 +72,30 @@ class AppConstants:
 
 
 class TimeRanges(Enum):
-    """
-    Enumeration for daily time ranges with associated time windows.
-    Provides type-safe time range definitions.
-    """
-    MORNING = ('Pagi', '03:00:00', '11:00:00')
-    BREAK_OUT = ('Siang_1', '11:29:00', '12:30:59')
-    BREAK_IN = ('Siang_2', '12:31:00', '13:30:59')
-    EVENING = ('Sore', '17:00:00', '23:59:59')
+    # ... (Pagi tetap sama)
+    MORNING = ('Pagi', '03:00:00', '9:00:00')
+
+    # PERBAIKAN: Batasi Siang 1 sampai 12:35:00
+    # Ini akan menangkap Yogi (11:34) dan teman yg telat istirahat (misal 12:31)
+    BREAK_OUT = ('Siang_1', '11:29:00', '12:29:00')
+
+    # Mulai Siang 2 dari 12:35:01
+    # Ini memastikan Yogi (12:38) masuk ke sini (Siang 2)
+    BREAK_IN = ('Siang_2', '12:31:00', '15:00:00')
     
+    # ... (Sore tetap sama)
+    EVENING = ('Sore', '17:00:00', '23:59:59')
+
     def __init__(self, label: str, start: str, end: str):
         self.label = label
         self.start_time = start
         self.end_time = end
-    
+
     @property
     def time_window(self) -> Tuple[str, str]:
         """Returns the time window as a tuple."""
         return (self.start_time, self.end_time)
+    
 
 
 class AttendanceStatus(Enum):
@@ -240,7 +246,7 @@ def initialize_divisions():
                        members=["Hildan Ahmad Zaelani", "Abdurahim Andar"]),
         
         DivisionConfig("PKP-PK", "#fab1a0", "🚒", "RES", description="Fire & Rescue Services", priority=13, 
-                       members=["Andreas Aritonang", "Achmad Alwan Asyhab", "Doni Eka Satria", "Yogi Prasetya Eka Winandra", "Akhsin Aditya Weza Putra", "Fardhan Ahmad Tajali", "Maikel Renato Syafaruddin", "Saldi Sandra", "Hamzah M. Ali Gani", "Marfan Mandar", "Julham Keya", "Aditya Sugiantoro Abbas", "Muhammad Usman", "M Akbar D Patty", "Daniel Freski Wangka", "Fandi M.Naser", "Agung Fadjriansyah Ano", "Deni Hendri Bobode", "Muhammad Rifai", "Idrus Arsad"])
+                       members=["Andreas Aritonang", "Achmad Alwan Asyhab", "Doni Eka Satria", "Yogi Prasetya Eka Winandra", "Akhsin Aditya Weza Putra", "Fardhan Ahmad Tajali", "Maikel Renato Syafaruddin", "Saldi Sandra", "Hamzah M. Ali Gani", "Marfan Mandar", "Julham Keya", "Aditya Sugiantoro Abbas", "Muhamad Usman", "M Akbar D Patty", "Daniel Freski Wangka", "Fandi M.Naser", "Agung Fadjriansyah Ano", "Deni Hendri Bobode", "Muhammad Rifai", "Idrus Arsad"])
     ]
     for division in divisions_data:
         DivisionRegistry.register(division)
@@ -482,7 +488,6 @@ class TimeService:
 class AttendanceService:
     """
     Core business logic service for attendance processing.
-    Implements complex attendance analysis algorithms.
     """
     
     def __init__(self, attendance_repo: AttendanceRepository, status_repo: StatusRepository):
@@ -491,29 +496,16 @@ class AttendanceService:
         self.time_service = TimeService()
     
     def get_attendance_for_date(self, target_date: datetime.date) -> Optional[pd.DataFrame]:
-        """
-        Get attendance records for a specific date.
-        """
         df = self.attendance_repo.fetch()
-        if df is None:
-            return None
-        
+        if df is None: return None
         return df[df['Tanggal'] == target_date].copy()
     
     def get_status_for_date(self, target_date: datetime.date) -> Dict[str, str]:
-        """
-        Get employee statuses for a specific date.
-        """
         df = self.status_repo.fetch()
-        if df is None:
-            return {}
-        
+        if df is None: return {}
         date_str = target_date.strftime(AppConstants.DATE_FORMAT)
         df_filtered = df[df['Tanggal_Str'] == date_str]
-        
-        if df_filtered.empty:
-            return {}
-        
+        if df_filtered.empty: return {}
         return pd.Series(
             df_filtered[AppConstants.COL_STATUS].values,
             index=df_filtered[AppConstants.COL_EMPLOYEE_NAME]
@@ -521,132 +513,107 @@ class AttendanceService:
     
     def extract_time_ranges(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        Extract first attendance time for each time range.
-        Robust version that handles NaN/Empty groups safely.
+        LOGIKA SMART RANGE (NO GAPS):
+        - Pagi    : 03:00 s/d 09:00:00 (Ambil Scan PERTAMA)
+        - Siang 1 : 11:30 s/d 12:29:59 (Ambil Scan PERTAMA)
+        - Siang 2 : 12:30 s/d 15:59:59 (Ambil Scan PERTAMA)
+        - Sore    : 17:00 ke atas      (Ambil Scan TERAKHIR)
         """
-        # 1. Cek DataFrame kosong
-        if df.empty:
-            return pd.DataFrame()
-        
-        # 2. Bersihkan Data: Hapus baris jika Nama atau Tanggal NaN/NaT
-        # Ini mencegah terbentuknya grup kosong yang menyebabkan error shape (0,0)
+        if df.empty: return pd.DataFrame()
+
         df_clean = df.dropna(subset=[AppConstants.COL_PERSON_NAME, 'Tanggal'])
-        
-        if df_clean.empty:
-            return pd.DataFrame()
-        
-        # 3. Grouping
+        if df_clean.empty: return pd.DataFrame()
+
+        # Pastikan Waktu dalam format datetime yang benar
+        df_clean['Waktu_Obj'] = pd.to_datetime(df_clean[AppConstants.COL_EVENT_TIME]).dt.time
+
         grouped = df_clean.groupby([AppConstants.COL_PERSON_NAME, 'Tanggal'])
         
-        # Cek jika tidak ada grup (misal semua data terfilter)
-        if grouped.ngroups == 0:
-            return pd.DataFrame()
-        
-        time_columns = {}
-        for time_range in TimeRanges:
-            start_time = time.fromisoformat(time_range.start_time)
-            end_time = time.fromisoformat(time_range.end_time)
+        def process_group(group):
+            result = {
+                'Pagi': '',
+                'Siang_1': '',
+                'Siang_2': '',
+                'Sore': ''
+            }
             
-            # Apply lambda
-            result_series = grouped.apply(
-                lambda g: self._get_min_time_in_range(g, start_time, end_time)
-            )
+            # Sortir waktu dari pagi ke malam agar urutannya benar
+            sorted_group = group.sort_values(AppConstants.COL_EVENT_TIME)
             
-            # 4. Defensif: Paksa hasil menjadi Series 1-Dimensi
-            # Pandas kadang mengembalikan DataFrame kosong (0,0) jika hasil apply ambigu
-            if isinstance(result_series, pd.DataFrame):
-                if result_series.empty:
-                    # Buat series kosong fallback
-                    result_series = pd.Series(dtype=object)
-                else:
-                    # Ambil kolom pertama jika itu DataFrame
-                    result_series = result_series.iloc[:, 0]
-            
-            time_columns[time_range.label] = result_series
-        
-        # 5. Cek konsistensi dictionary
-        if not time_columns:
-            return pd.DataFrame()
+            for _, row in sorted_group.iterrows():
+                t = row['Waktu_Obj'] 
+                val_str = row[AppConstants.COL_EVENT_TIME].strftime(AppConstants.TIME_FORMAT)
+                
+                # --- LOGIKA PENENTUAN WAKTU ---
+                
+                # 1. PAGI (Sebelum 11:30)
+                if t < time(11, 30, 0):
+                    if result['Pagi'] == '': 
+                        result['Pagi'] = val_str
+                
+                # 2. SIANG 1 (11:30 - 12:29)
+                elif time(11, 30, 0) <= t < time(12, 30, 0):
+                    if result['Siang_1'] == '':
+                        result['Siang_1'] = val_str
+                        
+                # 3. SIANG 2 (12:30 - 16:00)
+                elif time(12, 30, 0) <= t < time(16, 0, 0):
+                    if result['Siang_2'] == '':
+                        result['Siang_2'] = val_str
+                        
+                # 4. SORE (Setelah 16:00)
+                elif t >= time(16, 0, 0):
+                    result['Sore'] = val_str # Overwrite (ambil terakhir)
 
-        try:
-            # Konstruksi DataFrame Akhir
-            result = pd.DataFrame(time_columns).reset_index()
-            result.rename(columns={AppConstants.COL_PERSON_NAME: AppConstants.COL_EMPLOYEE_NAME}, inplace=True)
-            return result
-        except ValueError:
-            # Jika masih gagal karena dimensi, return kosong agar app tidak crash
-            return pd.DataFrame()
-    
-    def _get_min_time_in_range(
-        self, 
-        group: pd.DataFrame, 
-        start: time, 
-        end: time
-    ) -> Optional[str]:
-        """Helper method to get minimum time in a range."""
-        filtered = group[(group['Waktu'] >= start) & (group['Waktu'] <= end)]
+            return pd.Series(result)
+
+        if grouped.ngroups == 0: return pd.DataFrame()
+
+        result_df = grouped.apply(process_group).reset_index()
+        result_df.rename(columns={AppConstants.COL_PERSON_NAME: AppConstants.COL_EMPLOYEE_NAME}, inplace=True)
         
-        if filtered.empty:
-            return None
-        
-        min_timestamp = filtered[AppConstants.COL_EVENT_TIME].min()
-        return min_timestamp.strftime(AppConstants.TIME_FORMAT)
-    
-    def build_complete_report(
-        self, 
-        target_date: datetime.date
-    ) -> Tuple[pd.DataFrame, Dict[str, str]]:
+        return result_df
+
+    def build_complete_report(self, target_date: datetime.date) -> Tuple[pd.DataFrame, Dict[str, str]]:
         """
-        Build complete attendance report for a date.
+        Builds the master dataframe merging attendance times with employee list.
         """
-        # Get attendance data
         df_attendance = self.get_attendance_for_date(target_date)
-        
-        # Get status data
         status_dict = self.get_status_for_date(target_date)
         
-        # Extract time ranges
-        df_times = self.extract_time_ranges(df_attendance) if df_attendance is not None else pd.DataFrame()
+        if df_attendance is not None and not df_attendance.empty:
+            df_times = self.extract_time_ranges(df_attendance)
+        else:
+            df_times = pd.DataFrame()
         
-        # Get all employees
         all_employees = DivisionRegistry.get_all_members()
         df_all = pd.DataFrame({AppConstants.COL_EMPLOYEE_NAME: all_employees})
         
-        # Merge with attendance data
-        df_final = pd.merge(df_all, df_times, on=AppConstants.COL_EMPLOYEE_NAME, how='left')
+        if not df_times.empty:
+            df_final = pd.merge(df_all, df_times, on=AppConstants.COL_EMPLOYEE_NAME, how='left')
+        else:
+            df_final = df_all.copy()
+            for col in ['Pagi', 'Siang_1', 'Siang_2', 'Sore']:
+                df_final[col] = ''
+
         df_final.fillna('', inplace=True)
-        
         return df_final, status_dict
-    
-    def calculate_metrics(
-        self, 
-        df: pd.DataFrame, 
-        status_dict: Dict[str, str]
-    ) -> Dict[str, Any]:
+
+    def calculate_metrics(self, df: pd.DataFrame, status_dict: Dict[str, str]) -> Dict[str, Any]:
         """
-        Calculate attendance metrics and statistics.
+        Calculates daily statistics (Present, Absent, Late, etc.)
         """
         total_employees = len(df)
-        
-        present_count = 0
-        permit_count = 0
-        absent_count = 0
-        late_count = 0
-        
-        late_list = []
-        permit_list = []
-        absent_list = []
-        partial_list = []
+        present_count = 0; permit_count = 0; absent_count = 0; late_count = 0
+        late_list = []; permit_list = []; absent_list = []; partial_list = []
         
         for idx, row in df.iterrows():
             name = row[AppConstants.COL_EMPLOYEE_NAME]
             times = [row.get('Pagi', ''), row.get('Siang_1', ''), 
                      row.get('Siang_2', ''), row.get('Sore', '')]
-            
             empty_count = sum(1 for t in times if t == '')
             manual_status = status_dict.get(name, "")
             
-            # Determine status
             if manual_status:
                 permit_count += 1
                 permit_list.append((name, manual_status))
@@ -655,32 +622,20 @@ class AttendanceService:
                 absent_list.append(name)
             else:
                 present_count += 1
-                
-                # Check if late
                 morning_time = row.get('Pagi', '')
                 if morning_time and self.time_service.is_late(morning_time):
                     late_count += 1
                     late_list.append((name, morning_time))
-                
-                # Check if partial
                 if empty_count > 0:
                     partial_list.append((name, empty_count))
         
         return {
-            'total': total_employees,
-            'present': present_count,
-            'permit': permit_count,
-            'absent': absent_count,
-            'late': late_count,
-            'late_list': late_list,
-            'permit_list': permit_list,
-            'absent_list': absent_list,
-            'partial_list': partial_list,
+            'total': total_employees, 'present': present_count, 'permit': permit_count,
+            'absent': absent_count, 'late': late_count, 'late_list': late_list,
+            'permit_list': permit_list, 'absent_list': absent_list, 'partial_list': partial_list,
             'attendance_rate': (present_count / total_employees * 100) if total_employees > 0 else 0,
             'punctuality_rate': ((present_count - late_count) / present_count * 100) if present_count > 0 else 0
         }
-
-
 class AnalyticsService:
     """
     Service for advanced analytics and reporting.
@@ -778,26 +733,24 @@ class AnalyticsService:
 class ExcelExporter:
     def __init__(self):
         self.workbook = None
-        self.worksheet = None
         self.formats = {}
-    
-    def create_attendance_report(self, df: pd.DataFrame, status_dict: Dict[str, str], date: datetime.date, metrics: Any = None):
-        output = io.BytesIO()
-        self.workbook = xlsxwriter.Workbook(output, {'in_memory': True})
-        
-        # --- DEFINE FORMATS WITH ALL BORDERS ---
-        # 'border': 1 is added to EVERY format to ensure grid lines
-        fmt_head = self.workbook.add_format({'bold': True, 'fg_color': '#4caf50', 'font_color': 'white', 'border': 1, 'align': 'center'})
-        fmt_norm = self.workbook.add_format({'border': 1, 'align': 'center'})
-        fmt_miss = self.workbook.add_format({'bg_color': '#FF0000', 'border': 1, 'align': 'center'}) # MERAH FILL UNTUK BOX KOSONG
-        fmt_full = self.workbook.add_format({'bg_color': '#FFFF00', 'border': 1, 'align': 'center'}) # KUNING UNTUK ALPHA
-        fmt_late = self.workbook.add_format({'font_color': 'red', 'bold': True, 'border': 1, 'align': 'center'}) # MERAH FONT UNTUK TELAT
-        
-        ws = self.workbook.add_worksheet('Rekap')
-        
+
+    def _init_formats(self, workbook):
+        """Helper to initialize formats only once per workbook"""
+        self.fmt_head = workbook.add_format({'bold': True, 'fg_color': '#4caf50', 'font_color': 'white', 'border': 1, 'align': 'center'})
+        self.fmt_norm = workbook.add_format({'border': 1, 'align': 'center'})
+        self.fmt_miss = workbook.add_format({'bg_color': '#FF0000', 'border': 1, 'align': 'center'}) 
+        self.fmt_full = workbook.add_format({'bg_color': '#FFFF00', 'border': 1, 'align': 'center'}) 
+        self.fmt_late = workbook.add_format({'font_color': 'red', 'bold': True, 'border': 1, 'align': 'center'})
+
+    def _write_sheet_content(self, ws, df: pd.DataFrame, status_dict: Dict[str, str]):
+        """
+        Internal logic to write a single sheet. 
+        Reused by both single date and range reports.
+        """
         # Headers
         headers = ['Nama Karyawan', 'Pagi', 'Siang_1', 'Siang_2', 'Sore', 'Keterangan']
-        ws.write_row(0, 0, headers, fmt_head)
+        ws.write_row(0, 0, headers, self.fmt_head)
         ws.set_column(0, 0, 30) # Lebar kolom Nama
         ws.set_column(1, 5, 15) # Lebar kolom Waktu & Ket
         
@@ -815,38 +768,71 @@ class ExcelExporter:
             empty = sum(1 for t in times if t == '')
             
             # Tulis Nama & Keterangan Normal Dulu
-            ws.write(row_num, 0, nm, fmt_norm)
-            ws.write(row_num, 5, manual_stat, fmt_norm)
+            ws.write(row_num, 0, nm, self.fmt_norm)
+            ws.write(row_num, 5, manual_stat, self.fmt_norm)
             
             # LOGIKA WARNA
             if manual_stat:
-                # Izin/Sakit: Kosongkan waktu dengan format normal (putih)
-                for i in range(4): ws.write(row_num, i+1, "", fmt_norm)
+                # Izin/Sakit: Kosongkan waktu dengan format normal
+                for i in range(4): ws.write(row_num, i+1, "", self.fmt_norm)
                 
             elif empty == 4:
-                # Alpha (4 Bolong): Isi waktu dengan format FULL KUNING, TANPA TEXT "-"
-                for i in range(4): ws.write(row_num, i+1, "", fmt_full)
+                # Alpha (4 Bolong): Isi waktu dengan format FULL KUNING
+                for i in range(4): ws.write(row_num, i+1, "", self.fmt_full)
                 
             else:
                 # Hadir (Cek satu per satu)
-                
                 # 1. Pagi
                 if pagi == '': 
-                    ws.write(row_num, 1, "", fmt_miss) # Bolong -> Merah Fill, Tanpa Teks
+                    ws.write(row_num, 1, "", self.fmt_miss) 
                 else:
                     if TimeService.is_late(pagi): 
-                        ws.write(row_num, 1, pagi, fmt_late) # Telat -> Merah Font
+                        ws.write(row_num, 1, pagi, self.fmt_late) 
                     else: 
-                        ws.write(row_num, 1, pagi, fmt_norm) # Normal
+                        ws.write(row_num, 1, pagi, self.fmt_norm) 
                 
-                # 2. Istirahat & Pulang (Looping sisa kolom)
+                # 2. Istirahat & Pulang
                 rest_times = [siang1, siang2, sore]
                 for i, t in enumerate(rest_times):
                     col_idx = i + 2
                     if t == '': 
-                        ws.write(row_num, col_idx, "", fmt_miss) # Bolong -> Merah Fill, Tanpa Teks
+                        ws.write(row_num, col_idx, "", self.fmt_miss) 
                     else: 
-                        ws.write(row_num, col_idx, t, fmt_norm) # Normal
+                        ws.write(row_num, col_idx, t, self.fmt_norm)
+
+    def create_attendance_report(self, df: pd.DataFrame, status_dict: Dict[str, str], date: datetime.date, metrics: Any = None):
+        """Creates a single sheet report"""
+        output = io.BytesIO()
+        self.workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+        self._init_formats(self.workbook)
+        
+        sheet_name = date.strftime('%d-%b') # e.g., 29-Nov
+        ws = self.workbook.add_worksheet(sheet_name)
+        
+        self._write_sheet_content(ws, df, status_dict)
+        
+        self.workbook.close()
+        output.seek(0)
+        return output
+
+    def create_range_report(self, data_map: Dict[datetime.date, Tuple[pd.DataFrame, Dict]]):
+        """
+        Creates a multi-sheet Excel report for a date range.
+        data_map: Dictionary where Key = Date, Value = (DataFrame, StatusDict)
+        """
+        output = io.BytesIO()
+        self.workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+        self._init_formats(self.workbook)
+
+        # Sort dates to ensure tabs are in order
+        sorted_dates = sorted(data_map.keys())
+
+        for date in sorted_dates:
+            df, status_dict = data_map[date]
+            # Sheet name cannot handle special chars or be too long
+            sheet_name = date.strftime('%d-%b') 
+            ws = self.workbook.add_worksheet(sheet_name)
+            self._write_sheet_content(ws, df, status_dict)
 
         self.workbook.close()
         output.seek(0)
@@ -1493,13 +1479,13 @@ class ComponentRenderer:
             </div>
             <div class="card-body">
                 <div class="flight-row">
-                    <span class="flight-label">🛫 CHECK-IN</span>
+                    <span class="flight-label">🛫 Jam Datang</span>
                     <span class="flight-value" style="font-size:1.2rem;">
                         {morning if morning else '━━:━━'} {late_indicator}
                     </span>
                 </div>
                 <div class="flight-row">
-                    <span class="flight-label">🛬 CHECK-OUT</span>
+                    <span class="flight-label">🛬 Jam Pulang</span>
                     <span class="flight-value" style="font-size:1.2rem;">
                         {evening if evening else '━━:━━'}
                     </span>
@@ -1544,7 +1530,7 @@ class ComponentRenderer:
             check_in = morning if morning else "❌ NOT RECORDED"
             if is_late:
                 check_in += " ⚠️ **LATE**"
-            st.info(f"**CHECK-IN:** {check_in}")
+            st.info(f"**Jam Datang:** {check_in}")
             
             break_out_display = break_out if break_out else "❌ NOT RECORDED"
             st.write(f"**Siang 1:** {break_out_display}")
@@ -1556,7 +1542,7 @@ class ComponentRenderer:
             st.write(f"**Siang 2:** {break_in_display}")
             
             check_out = evening if evening else "❌ NOT RECORDED"
-            st.success(f"**CHECK-OUT:** {check_out}")
+            st.success(f"**Jam Pulang:** {check_out}")
         
         # Calculate work duration
         if morning and evening:
@@ -1884,6 +1870,12 @@ class AttendanceController:
     Orchestrates all business logic and UI rendering.
     """
     
+class AttendanceController:
+    """
+    Main application controller implementing MVC pattern.
+    Orchestrates all business logic and UI rendering.
+    """
+    
     def __init__(self):
         # Initialize repositories
         self.attendance_repo = AttendanceRepository(DataSourceConfig.ATTENDANCE_SHEET_URL)
@@ -1897,21 +1889,21 @@ class AttendanceController:
         self.component_renderer = ComponentRenderer()
         self.chart_builder = ChartBuilder()
         self.excel_exporter = ExcelExporter()
-    
+
     def run_dashboard(self) -> None:
         """Main dashboard view."""
-        # Header
+        # 1. Header
         st.markdown('<div class="brand-title">WedaBayAirport</div>', unsafe_allow_html=True)
         st.markdown('<div class="brand-subtitle">REAL-TIME PERSONNEL MONITORING SYSTEM</div>', 
                     unsafe_allow_html=True)
         
-        # Check data availability
+        # 2. Check data availability
         df_attendance = self.attendance_repo.fetch()
         if df_attendance is None:
             st.error("⚠️ SYSTEM OFFLINE - Unable to connect to attendance database")
             st.stop()
         
-        # Filters
+        # 3. Filters & Date Selection
         col1, col2, col3 = st.columns([2, 3, 2])
         
         with col1:
@@ -1942,41 +1934,93 @@ class AttendanceController:
         
         st.markdown("---")
         
-        # Build report
+        # 4. Build report variables (df_final & metrics)
         with st.spinner("🔄 Loading flight data..."):
             df_final, status_dict = self.attendance_service.build_complete_report(selected_date)
             metrics = self.attendance_service.calculate_metrics(df_final, status_dict)
         
-        # Metrics section
+        # 5. Metrics section UI
         self.component_renderer.render_metric_cards(metrics)
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # Anomalies section
+        # 6. Anomalies section UI
         with st.container():
             self.component_renderer.render_anomaly_section(metrics)
         
         st.markdown("---")
         
-        # Export options
-        col_export1, col_export2, col_export3 = st.columns([2, 2, 3])
+        # 7. EXPORT & REPORTS SECTION
+        st.markdown("### 📤 EXPORT REPORTS")
         
-        with col_export1:
-            excel_file = self.excel_exporter.create_attendance_report(
-                df_final, status_dict, selected_date, metrics
-            )
-            st.download_button(
-                "📥 DOWNLOAD EXCEL REPORT",
-                data=excel_file,
-                file_name=f"Attendance_{selected_date.strftime('%Y%m%d')}.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                use_container_width=True
-            )
+        export_tab1, export_tab2 = st.tabs(["📄 Daily Report", "📅 Range Report"])
+
+        # --- TAB 1: DOWNLOAD PER HARI ---
+        with export_tab1:
+            col_ex1, col_ex2 = st.columns([1, 1])
+            with col_ex1:
+                st.info(f"Download report for selected date: **{selected_date.strftime('%d %B %Y')}**")
+                
+                excel_file = self.excel_exporter.create_attendance_report(
+                    df_final, status_dict, selected_date, metrics
+                )
+                
+                st.download_button(
+                    "📥 DOWNLOAD DAILY EXCEL",
+                    data=excel_file,
+                    file_name=f"Attendance_{selected_date.strftime('%Y%m%d')}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True
+                )
+            with col_ex2:
+                 if st.button("📊 VIEW ANALYTICS", use_container_width=True):
+                    st.session_state['show_analytics'] = True
+
+        # --- TAB 2: DOWNLOAD RANGE TANGGAL ---
+        with export_tab2:
+            st.write("Select a date range to generate a multi-sheet Excel file.")
+            
+            # Input Range Tanggal
+            col_rng1, col_rng2 = st.columns(2)
+            with col_rng1:
+                start_date_input = st.date_input("Start Date", value=selected_date - timedelta(days=7))
+            with col_rng2:
+                end_date_input = st.date_input("End Date", value=selected_date)
+
+            # Tombol Generate
+            if st.button("📦 GENERATE RANGE REPORT", use_container_width=True):
+                if start_date_input > end_date_input:
+                    st.error("Error: Start Date must be before End Date")
+                else:
+                    with st.spinner(f"Generating report from {start_date_input} to {end_date_input}..."):
+                        range_data_map = {}
+                        current_loop_date = start_date_input
+                        
+                        # Loop untuk mengambil data setiap hari dalam range
+                        while current_loop_date <= end_date_input:
+                            try:
+                                # Kita panggil service ulang untuk setiap tanggal
+                                day_df, day_status = self.attendance_service.build_complete_report(current_loop_date)
+                                range_data_map[current_loop_date] = (day_df, day_status)
+                            except Exception:
+                                pass # Skip error dates
+                            current_loop_date += timedelta(days=1)
+                        
+                        if range_data_map:
+                            range_excel = self.excel_exporter.create_range_report(range_data_map)
+                            st.success("✅ Report Generated Successfully!")
+                            st.download_button(
+                                label=f"📥 DOWNLOAD RANGE REPORT ({start_date_input} - {end_date_input})",
+                                data=range_excel,
+                                file_name=f"Attendance_Range_{start_date_input}_{end_date_input}.xlsx",
+                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                use_container_width=True
+                            )
+                        else:
+                            st.warning("No data found for the selected range.")
+
+        st.markdown("---")
         
-        with col_export2:
-            if st.button("📊 GENERATE ANALYTICS", use_container_width=True):
-                st.session_state['show_analytics'] = True
-        
-        # View modes
+        # 8. View modes Logic
         if view_mode == "Cards":
             st.markdown("### 📋 PERSONNEL ROSTER")
             self.component_renderer.render_division_tabs(df_final, status_dict, search_query)
@@ -1991,13 +2035,14 @@ class AttendanceController:
         if st.session_state.get('show_analytics', False):
             with st.expander("📈 ADVANCED ANALYTICS", expanded=True):
                 self._render_analytics_view(df_final, status_dict, metrics, selected_date)
-    
+
     def _render_table_view(self, df: pd.DataFrame, status_dict: Dict[str, str]) -> None:
         """Render table view of attendance."""
         st.markdown("### 📊 DETAILED ATTENDANCE TABLE")
         
         # Prepare display dataframe
         df_display = df.copy()
+        
         df_display['Division'] = df_display[AppConstants.COL_EMPLOYEE_NAME].apply(
             lambda x: DivisionRegistry.find_by_member(x).code 
             if DivisionRegistry.find_by_member(x) else "N/A"
@@ -2009,13 +2054,12 @@ class AttendanceController:
         
         # Rename columns for display
         df_display = df_display.rename(columns={
-            'Pagi': 'Check-In',
+            'Pagi': 'Jam Datang',
             'Siang_1': 'Siang 1',
             'Siang_2': 'Siang 2',
-            'Sore': 'Check-Out'
+            'Sore': 'Jam Pulang'
         })
         
-        # Select and reorder columns
         display_columns = [
             AppConstants.COL_EMPLOYEE_NAME, 
             'Division', 
@@ -2026,28 +2070,28 @@ class AttendanceController:
             'Status'
         ]
         
-        df_display = df_display[display_columns]
+        # Filter existing columns
+        final_cols = [c for c in display_columns if c in df_display.columns]
+        df_display = df_display[final_cols]
         
-        # Apply styling
+        # Styling Function
         def highlight_late(val):
             if isinstance(val, str) and ':' in val:
                 if TimeService.is_late(val):
                     return 'color: #e84118; font-weight: bold'
             return ''
         
-        styled_df = df_display.style.applymap(
-            highlight_late, 
-            subset=['Check-In']
-        )
+        try:
+            st.dataframe(
+                df_display.style.applymap(highlight_late, subset=['Jam Datang']),
+                use_container_width=True,
+                height=600,
+                hide_index=True
+            )
+        except Exception:
+            st.dataframe(df_display, use_container_width=True, height=600)
         
-        st.dataframe(
-            styled_df,
-            use_container_width=True,
-            height=600,
-            hide_index=True
-        )
-        
-        # Download CSV
+        # Download Button
         csv = df_display.to_csv(index=False)
         st.download_button(
             "💾 DOWNLOAD CSV",
@@ -2056,7 +2100,7 @@ class AttendanceController:
             mime="text/csv",
             use_container_width=True
         )
-    
+
     def _render_analytics_view(
         self, 
         df: pd.DataFrame, 
@@ -2125,7 +2169,7 @@ class AttendanceController:
                 avg_late_time,
                 help="Average time of late arrivals"
             )
-    
+
     def run_report_form(self) -> None:
         """Report submission view."""
         st.markdown('<div class="brand-title">MANUAL REPORTING</div>', unsafe_allow_html=True)
@@ -2134,7 +2178,6 @@ class AttendanceController:
         
         st.info("📝 Use the form below to submit permit requests, sick leaves, or other attendance modifications.")
         
-        # Embed Google Form
         if "PASTE_LINK" in DataSourceConfig.REPORT_FORM_URL:
             st.warning("⚠️ Google Form URL not configured. Please contact system administrator.")
         else:
@@ -2143,7 +2186,6 @@ class AttendanceController:
                 height=1200,
                 scrolling=True
             )
-
 
 # ================================================================================
 # SECTION 9: ADDITIONAL FEATURES & UTILITIES
