@@ -513,11 +513,20 @@ class AttendanceService:
     
     def extract_time_ranges(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        LOGIKA SMART RANGE (NO GAPS):
-        - Pagi    : 03:00 s/d 09:00:00 (Ambil Scan PERTAMA)
-        - Siang 1 : 11:30 s/d 12:29:59 (Ambil Scan PERTAMA)
-        - Siang 2 : 12:30 s/d 15:59:59 (Ambil Scan PERTAMA)
-        - Sore    : 17:00 ke atas      (Ambil Scan TERAKHIR)
+        LOGIKA SMART RANGE (NO GAPS) - REVISI JUMAT STRICT:
+        
+        NORMAL (Senin-Kamis, Sabtu-Minggu):
+        - Pagi    : < 11:30
+        - Siang 1 : 11:30 s/d 12:29
+        - Siang 2 : 12:30 s/d 15:59
+        - Sore    : >= 16:00
+        
+        KHUSUS JUMAT:
+        - Pagi    : < 12:00
+        - Siang 1 : 12:00 s/d 12:59
+        - Siang 2 : 13:00 s/d 14:00 (STRICT CUTOFF)
+        - Gap     : 14:01 s/d 16:59 (Tidak tercatat/Zona mati)
+        - Sore    : >= 17:00
         """
         if df.empty: return pd.DataFrame()
 
@@ -537,32 +546,50 @@ class AttendanceService:
                 'Sore': ''
             }
             
-            # Sortir waktu dari pagi ke malam agar urutannya benar
+            # 1. Cek Hari (0=Senin, 4=Jumat, 6=Minggu)
+            current_date = group['Tanggal'].iloc[0]
+            is_friday = (current_date.weekday() == 4)
+
+            # 2. Tentukan Batas Waktu (Thresholds)
+            if is_friday:
+                # --- JUMAT ---
+                limit_pagi    = time(12, 0, 0) # Batas akhir pagi
+                limit_siang1  = time(13, 0, 0) # Batas akhir siang 1 (mulai siang 2)
+                limit_siang2  = time(14, 0, 0) # Batas akhir siang 2 (STRICT)
+                start_sore    = time(17, 0, 0) # Mulai sore
+            else:
+                # --- HARI BIASA ---
+                limit_pagi    = time(11, 30, 0)
+                limit_siang1  = time(12, 30, 0)
+                limit_siang2  = time(16, 0, 0)
+                start_sore    = time(16, 0, 0)
+
+            # Sortir waktu
             sorted_group = group.sort_values(AppConstants.COL_EVENT_TIME)
             
             for _, row in sorted_group.iterrows():
                 t = row['Waktu_Obj'] 
                 val_str = row[AppConstants.COL_EVENT_TIME].strftime(AppConstants.TIME_FORMAT)
                 
-                # --- LOGIKA PENENTUAN WAKTU ---
+                # --- LOGIKA PEMBAGIAN WAKTU ---
                 
-                # 1. PAGI (Sebelum 11:30)
-                if t < time(11, 30, 0):
+                # 1. PAGI
+                if t < limit_pagi:
                     if result['Pagi'] == '': 
                         result['Pagi'] = val_str
                 
-                # 2. SIANG 1 (11:30 - 12:29)
-                elif time(11, 30, 0) <= t < time(12, 30, 0):
+                # 2. SIANG 1
+                elif limit_pagi <= t < limit_siang1:
                     if result['Siang_1'] == '':
                         result['Siang_1'] = val_str
                         
-                # 3. SIANG 2 (12:30 - 16:00)
-                elif time(12, 30, 0) <= t < time(16, 0, 0):
+                # 3. SIANG 2 (Berhenti tepat di limit_siang2)
+                elif limit_siang1 <= t <= limit_siang2: # Pakai <= agar 14:00 pas masuk
                     if result['Siang_2'] == '':
                         result['Siang_2'] = val_str
                         
-                # 4. SORE (Setelah 16:00)
-                elif t >= time(16, 0, 0):
+                # 4. SORE
+                elif t >= start_sore:
                     result['Sore'] = val_str # Overwrite (ambil terakhir)
 
             return pd.Series(result)
