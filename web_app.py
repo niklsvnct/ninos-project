@@ -1935,22 +1935,25 @@ class AttendanceController:
         
         with col1:
             # Ambil data unik dulu
-                    unfiltered_dates = df_attendance['Tanggal'].unique()
-                    
-                    # Filter manual: hanya ambil data yang BUKAN NaT (menggunakan pd.notna)
-                    clean_dates = [d for d in unfiltered_dates if pd.notna(d)]
-                    
-                    # Baru di-sort
-                    available_dates = sorted(clean_dates, reverse=True)
-                    if not available_dates:
-                        st.error("No attendance data available")
-                        st.stop()
-                            
-                            selected_date = st.date_input(
-                                "📅 OPERATION DATE",
-                                value=available_dates[0],
-                                help="Select date to view attendance"
-                            )
+            unfiltered_dates = df_attendance['Tanggal'].unique()
+            
+            # Filter manual: hanya ambil data yang BUKAN NaT
+            clean_dates = [d for d in unfiltered_dates if pd.notna(d)]
+            
+            # Baru di-sort
+            available_dates = sorted(clean_dates, reverse=True)
+
+            # PERBAIKAN: Geser 'if' ke KIRI agar lurus dengan 'available_dates' di atasnya
+            if not available_dates:
+                st.error("No attendance data available")
+                st.stop()
+            
+            # PERBAIKAN: Geser 'selected_date' ke KIRI agar lurus dengan 'available_dates'
+            selected_date = st.date_input(
+                "📅 OPERATION DATE",
+                value=available_dates[0],
+                help="Select date to view attendance"
+            )
         
         with col2:
             search_query = st.text_input(
@@ -2825,6 +2828,7 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 
 
 
