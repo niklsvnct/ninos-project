@@ -1942,9 +1942,9 @@ class AttendanceController:
                     
                     # Baru di-sort
                     available_dates = sorted(clean_dates, reverse=True)
-                            if not available_dates:
-                                st.error("No attendance data available")
-                                st.stop()
+                    if not available_dates:
+                        st.error("No attendance data available")
+                        st.stop()
                             
                             selected_date = st.date_input(
                                 "📅 OPERATION DATE",
@@ -2825,6 +2825,7 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 
 
 
