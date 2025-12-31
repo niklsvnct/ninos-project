@@ -1934,7 +1934,7 @@ class AttendanceController:
         col1, col2, col3 = st.columns([2, 3, 2])
         
         with col1:
-            available_dates = sorted(df_attendance['Tanggal'].unique(), reverse=True)
+            available_dates = sorted(df_attendance['Tanggal'].dropna().unique(), reverse=True)
             if not available_dates:
                 st.error("No attendance data available")
                 st.stop()
@@ -2818,4 +2818,5 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 
