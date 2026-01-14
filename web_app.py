@@ -246,7 +246,7 @@ def initialize_divisions():
                        members=["Hildan Ahmad Zaelani", "Abdurahim Andar"]),
         
         DivisionConfig("PKP-PK", "#fab1a0", "🚒", "RES", description="Fire & Rescue Services", priority=13, 
-                       members=["Andreas Aritonang", "Achmad Alwan Asyhab", "Doni Eka Satria", "Yogi Prasetya Eka Winandra", "Akhsin Aditya Weza Putra", "Fardhan Ahmad Tajali", "Maikel Renato Syafaruddin", "Saldi Sandra", "Hamzah M. Ali Gani", "Marfan Mandar", "Julham Keya", "Aditya Sugiantoro Abbas", "Muhamad Usman", "M Akbar D Patty", "Daniel Freski Wangka", "Fandi M.Naser", "Agung Fadjriansyah Ano", "Deni Hendri Bobode", "Muhammad Rifai", "Idrus Arsad"])
+                       members=["Andreas Aritonang", "Achmad Alwan Asyhab", "Doni Eka Satria", "Yogi Prasetya Eka Winandra", "Akhsin Aditya Weza Putra", "Fardhan Ahmad Tajali", "Maikel Renato Syafaruddin", "Saldi Sandra", "Hamzah M. Ali Gani", "Marfan Mandar", "Julham Keya", "Aditya Sugiantoro Abbas", "Muhamad Usman", "M Akbar D Patty", "Daniel Freski Wangka", "Fandi M.Naser", "Agung Fadjriansyah Ano", "Deni Hendri Bobode", "Muhammad Rifai", "Idrus Arsad, SH"])
     ]
     for division in divisions_data:
         DivisionRegistry.register(division)
@@ -2828,6 +2828,7 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 
 
 
