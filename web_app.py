@@ -644,6 +644,7 @@ class AttendanceService:
     def calculate_metrics(self, df: pd.DataFrame, status_dict: Dict[str, str]) -> Dict[str, Any]:
         """
         Calculates daily statistics (Present, Absent, Late, etc.)
+        FIXED: Unpack is_late tuple correctly.
         """
         total_employees = len(df)
         present_count = 0; permit_count = 0; absent_count = 0; late_count = 0
@@ -665,9 +666,17 @@ class AttendanceService:
             else:
                 present_count += 1
                 morning_time = row.get('Pagi', '')
-                if morning_time and self.time_service.is_late(morning_time):
-                    late_count += 1
-                    late_list.append((name, morning_time))
+                
+                # --- PERBAIKAN DISINI ---
+                if morning_time:
+                    # Bongkar paket tuple (is_late_status, shift_label)
+                    is_late_status, _ = self.time_service.is_late(morning_time)
+                    
+                    if is_late_status: # Cek nilai boolean-nya saja
+                        late_count += 1
+                        late_list.append((name, morning_time))
+                # ------------------------
+
                 if empty_count > 0:
                     partial_list.append((name, empty_count))
         
@@ -2863,6 +2872,7 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 
 
 
