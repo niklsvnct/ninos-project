@@ -2155,10 +2155,12 @@ class AttendanceController:
         final_cols = [c for c in display_columns if c in df_display.columns]
         df_display = df_display[final_cols]
         
-        # Styling Function
+        # Styling Function (FIXED)
         def highlight_late(val):
             if isinstance(val, str) and ':' in val:
-                if TimeService.is_late(val):
+                # Bongkar paket tuple, ambil status (index 0)
+                is_late_status, _ = TimeService.is_late(val)
+                if is_late_status:
                     return 'color: #e84118; font-weight: bold'
             return ''
         
@@ -2872,6 +2874,7 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 
 
 
