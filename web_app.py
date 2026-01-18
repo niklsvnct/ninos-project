@@ -775,7 +775,20 @@ class AnalyticsService:
 # SECTION 4: EXPORT & REPORTING LAYER (MODIFIED FOR IMAGE REPLICATION)
 # ================================================================================
 
-def _write_sheet_content(self, ws, df: pd.DataFrame, status_dict: Dict[str, str]):
+class ExcelExporter:
+    def __init__(self):
+        self.workbook = None
+        self.formats = {}
+
+    def _init_formats(self, workbook):
+        """Helper to initialize formats only once per workbook"""
+        self.fmt_head = workbook.add_format({'bold': True, 'fg_color': '#4caf50', 'font_color': 'white', 'border': 1, 'align': 'center'})
+        self.fmt_norm = workbook.add_format({'border': 1, 'align': 'center'})
+        self.fmt_miss = workbook.add_format({'bg_color': '#FF0000', 'border': 1, 'align': 'center'}) 
+        self.fmt_full = workbook.add_format({'bg_color': '#FFFF00', 'border': 1, 'align': 'center'}) 
+        self.fmt_late = workbook.add_format({'font_color': 'red', 'bold': True, 'border': 1, 'align': 'center'})
+
+    def _write_sheet_content(self, ws, df: pd.DataFrame, status_dict: Dict[str, str]):
         # Headers & Formatting
         headers = ['Nama Karyawan', 'Pagi', 'Siang_1', 'Siang_2', 'Sore', 'Keterangan']
         ws.write_row(0, 0, headers, self.fmt_head)
@@ -875,7 +888,7 @@ def _write_sheet_content(self, ws, df: pd.DataFrame, status_dict: Dict[str, str]
                 ws.write(row_num, 3, "", self.fmt_miss) 
 
             # 4. Sore (Pulang)
-            ws.write(row_num, 4, sore_str, self.fmt_norm if sore_str else self.fmt_miss)
+            ws.write(row_num, 4, sore_str, self.fmt_norm if sore_str else self.fmt_miss) 
 
     def create_attendance_report(self, df: pd.DataFrame, status_dict: Dict[str, str], date: datetime.date, metrics: Any = None):
         """Creates a single sheet report"""
@@ -2885,6 +2898,7 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 
 
 
