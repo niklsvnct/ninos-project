@@ -775,20 +775,7 @@ class AnalyticsService:
 # SECTION 4: EXPORT & REPORTING LAYER (MODIFIED FOR IMAGE REPLICATION)
 # ================================================================================
 
-class ExcelExporter:
-    def __init__(self):
-        self.workbook = None
-        self.formats = {}
-
-    def _init_formats(self, workbook):
-        """Helper to initialize formats only once per workbook"""
-        self.fmt_head = workbook.add_format({'bold': True, 'fg_color': '#4caf50', 'font_color': 'white', 'border': 1, 'align': 'center'})
-        self.fmt_norm = workbook.add_format({'border': 1, 'align': 'center'})
-        self.fmt_miss = workbook.add_format({'bg_color': '#FF0000', 'border': 1, 'align': 'center'}) 
-        self.fmt_full = workbook.add_format({'bg_color': '#FFFF00', 'border': 1, 'align': 'center'}) 
-        self.fmt_late = workbook.add_format({'font_color': 'red', 'bold': True, 'border': 1, 'align': 'center'})
-
-    def _write_sheet_content(self, ws, df: pd.DataFrame, status_dict: Dict[str, str]):
+def _write_sheet_content(self, ws, df: pd.DataFrame, status_dict: Dict[str, str]):
         # Headers & Formatting
         headers = ['Nama Karyawan', 'Pagi', 'Siang_1', 'Siang_2', 'Sore', 'Keterangan']
         ws.write_row(0, 0, headers, self.fmt_head)
@@ -817,63 +804,69 @@ class ExcelExporter:
             sore_str = row.get('Sore', '')
             manual_stat = status_dict.get(nm, "")
             
+            # Write Nama & Status (Keterangan Izin/Cuti ditulis disini)
+            ws.write(row_num, 0, nm, self.fmt_norm)
+            ws.write(row_num, 5, manual_stat, self.fmt_norm)
+
+            # ============================================================
+            # LOGIC 1: IZIN / SAKIT (MANUAL STATUS) -> SEKARANG KUNING
+            # ============================================================
+            if manual_stat:
+                # Loop tulis kolom waktu kosong dengan background KUNING (fmt_full)
+                for i in range(1, 5): ws.write(row_num, i, "", self.fmt_full)
+                continue # Lanjut ke karyawan berikutnya (Skip logic bawah)
+
+            # ============================================================
+            # LOGIC 2: ALPHA / FULL KOSONG -> WARNA KUNING
+            # ============================================================
+            if not pagi_str and not siang1_str and not siang2_str and not sore_str:
+                for i in range(1, 5): ws.write(row_num, i, "", self.fmt_full)
+                continue 
+
+            # ============================================================
+            # LOGIC 3: HADIR TAPI BOLONG/TELAT (LOGIKA SHIFT WATERFALL)
+            # ============================================================
+            
             # Convert string ke time objects
             t_pagi = datetime.strptime(pagi_str, "%H:%M").time() if pagi_str else None
             t_siang1 = datetime.strptime(siang1_str, "%H:%M").time() if siang1_str else None
             t_sore = datetime.strptime(sore_str, "%H:%M").time() if sore_str else None
 
-            # --- LOGIKA DETEKSI SHIFT (WATERFALL) ---
+            # --- DETEKSI SHIFT ---
             is_shift_2 = False
             
             if not is_friday_global:
-                # 1. PRIORITY 1: Cek Jam Keluar Istirahat
-                if t_siang1:
-                    # Kalau keluar istirahat > 13:00, pasti Shift 2 (karena S1 istirahat 11:30)
-                    if t_siang1 > time(13, 0, 0):
-                        is_shift_2 = True
-                
-                # 2. PRIORITY 2: Kalau Siang 1 kosong, Cek Jam Datang
-                elif t_pagi:
-                    # Kalau datang > 08:25, pasti Shift 2 (karena S1 masuk 07:00)
-                    if t_pagi > AppConstants.CUTOFF_SHIFT_1:
-                        is_shift_2 = True
-                
-                # 3. PRIORITY 3: Kalau Pagi & Siang kosong, Cek Jam Pulang
-                elif t_sore:
-                    # Kalau pulang > 18:00, kemungkinan Shift 2
-                    if t_sore > time(18, 0, 0):
-                        is_shift_2 = True
+                if t_siang1 and t_siang1 > time(13, 0, 0):
+                    is_shift_2 = True
+                elif t_pagi and t_pagi > AppConstants.CUTOFF_SHIFT_1:
+                    is_shift_2 = True
+                elif t_sore and t_sore > time(18, 0, 0):
+                    is_shift_2 = True
 
             # --- TENTUKAN BATAS MERAH ---
             if is_friday_global:
                 batas_datang = AppConstants.FRI_TOLERANSI_MASUK
                 batas_balik  = AppConstants.FRI_BREAK_END
             elif is_shift_2:
-                # Shift 2
                 batas_datang = AppConstants.S2_TOLERANSI_MASUK
                 batas_balik  = AppConstants.S2_BREAK_END
             else:
-                # Shift 1
                 batas_datang = AppConstants.S1_TOLERANSI_MASUK
                 batas_balik  = AppConstants.S1_BREAK_END
 
-            # --- WRITE DATA ---
-            # 0. Nama & Ket
-            ws.write(row_num, 0, nm, self.fmt_norm)
-            ws.write(row_num, 5, manual_stat, self.fmt_norm)
+            # --- WRITE DATA (MERAH vs HITAM) ---
 
             # 1. Pagi (Datang)
             if pagi_str:
-                # Merah jika telat sesuai shift masing-masing
                 fmt = self.fmt_late if t_pagi > batas_datang else self.fmt_norm
                 ws.write(row_num, 1, pagi_str, fmt)
             else:
-                ws.write(row_num, 1, "", self.fmt_miss)
+                ws.write(row_num, 1, "", self.fmt_miss) # Merah Kosong
 
-            # 2. Siang 1 (Keluar) - Normal (Tidak ada merah)
-            ws.write(row_num, 2, siang1_str, self.fmt_norm if siang1_str else self.fmt_miss)
+            # 2. Siang 1 (Keluar)
+            ws.write(row_num, 2, siang1_str, self.fmt_norm if siang1_str else self.fmt_miss) 
 
-            # 3. Siang 2 (Balik) - Merah jika telat balik
+            # 3. Siang 2 (Balik)
             if siang2_str:
                 t_balik = datetime.strptime(siang2_str, "%H:%M").time()
                 fmt = self.fmt_late if t_balik > batas_balik else self.fmt_norm
@@ -881,7 +874,7 @@ class ExcelExporter:
             else:
                 ws.write(row_num, 3, "", self.fmt_miss) 
 
-            # 4. Sore (Pulang) - Normal
+            # 4. Sore (Pulang)
             ws.write(row_num, 4, sore_str, self.fmt_norm if sore_str else self.fmt_miss)
 
     def create_attendance_report(self, df: pd.DataFrame, status_dict: Dict[str, str], date: datetime.date, metrics: Any = None):
@@ -2892,6 +2885,7 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 
 
 
