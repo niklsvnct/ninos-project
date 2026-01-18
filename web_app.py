@@ -37,11 +37,11 @@ class AppConstants:
     
     # Application Metadata
     APP_TITLE = "WedaBay Airport Absence Center"
-    APP_VERSION = "2.0.1"
+    APP_VERSION = "2.1.0 (Dual Shift Logic)"
     APP_ICON = "✈️"
     COMPANY_NAME = "WedaBay Aviation Services"
     
-    # Column Names (Database Schema)
+    # Column Names
     COL_PERSON_NAME = 'Person Name'
     COL_EVENT_TIME = 'Event Time'
     COL_EMPLOYEE_NAME = 'Nama Karyawan'
@@ -49,34 +49,31 @@ class AppConstants:
     COL_STATUS = 'Keterangan'
     
     # --- DUAL SHIFT CONFIGURATION ---
-    # Datang sebelum 08:25 = Shift 1. Datang setelahnya = Shift 2.
+    # Batas penentuan Shift secara kasar (untuk grouping kolom)
     CUTOFF_SHIFT_1 = time(8, 25, 0) 
     
     # ATURAN SHIFT 1 (07:00 - 17:00)
     S1_TOLERANSI_MASUK = time(7, 5, 0)   # Lewat 07:05 = Telat
-    S1_BREAK_START     = time(11, 30, 0)
-    S1_BREAK_END       = time(12, 30, 0) # Lewat 12:30 = Merah
+    S1_BREAK_END       = time(13, 30, 0) # Balik lewat 13:30 = Merah (SEBELUMNYA 12:30)
     
     # ATURAN SHIFT 2 (09:00 - 19:00)
     S2_TOLERANSI_MASUK = time(9, 5, 0)   # Lewat 09:05 = Telat
-    S2_BREAK_START     = time(14, 0, 0)
-    S2_BREAK_END       = time(16, 0, 0)  # Lewat 16:00 = Merah
+    S2_BREAK_END       = time(16, 0, 0)  # Balik lewat 16:00 = Merah
 
+    # ATURAN JUMAT (All Shifts)
+    FRI_TOLERANSI_MASUK = time(7, 35, 0) # Asumsi Jumat masuk 07:30
+    FRI_BREAK_END       = time(14, 0, 0) # Balik lewat 14:00 = Merah
+
+    # Logic Constants
     EARLY_ARRIVAL = time(6, 0, 0)
     
-    # Cache Configuration
+    # System Config
     CACHE_TTL_SECONDS = 10
     MAX_CACHE_ENTRIES = 100
-    
-    # UI Configuration
     SIDEBAR_STATE = "expanded"
     LAYOUT_MODE = "wide"
     CARDS_PER_ROW = 4
-    
-    # Data Refresh Intervals
-    AUTO_REFRESH_INTERVAL = 30  # seconds
-    
-    # Export Settings
+    AUTO_REFRESH_INTERVAL = 30
     EXCEL_ENGINE = 'xlsxwriter'
     DATE_FORMAT = '%Y-%m-%d'
     TIME_FORMAT = '%H:%M'
@@ -539,7 +536,7 @@ class AttendanceService:
     def extract_time_ranges(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         SMART RANGE: Menentukan kategori waktu (Pagi/Siang/Sore)
-        secara dinamis berdasarkan jam masuk pertama (Shift 1 vs Shift 2).
+        secara dinamis agar support Shift 1 & Shift 2.
         """
         if df.empty: return pd.DataFrame()
 
@@ -556,58 +553,55 @@ class AttendanceService:
             sorted_group = group.sort_values(AppConstants.COL_EVENT_TIME)
             if sorted_group.empty: return pd.Series(result)
 
-            # --- DETEKSI SHIFT BERDASARKAN JAM PERTAMA (DATANG) ---
+            # Cek Hari Jumat
+            # (weekday 4 = Jumat)
+            is_friday = sorted_group.iloc[0]['Tanggal'].weekday() == 4
+
+            # Ambil jam pertama tap
             first_log = sorted_group.iloc[0]['Waktu_Obj']
             
-            # Default thresholds (Akan di-override di bawah)
-            limit_pagi = time(10, 0, 0)
-            limit_siang_out = time(12, 0, 0)
-            limit_siang_in = time(13, 0, 0)
-            start_sore = time(16, 0, 0)
-
-            # LOGIKA DINAMIS
-            if first_log <= AppConstants.CUTOFF_SHIFT_1:
+            # Default thresholds
+            limit_pagi = time(11, 0, 0)
+            
+            # --- LOGIKA PENENTUAN KOLOM ---
+            if is_friday:
+                # Jumat: Istirahat 12:00 - 14:00
+                limit_siang_out = time(12, 59, 0) 
+                limit_siang_in  = time(14, 30, 0)
+                start_sore      = time(16, 0, 0)
+            elif first_log <= AppConstants.CUTOFF_SHIFT_1:
                 # === SHIFT 1 (Pagi) ===
-                # Pagi: < 11:00
-                # Istirahat Keluar: 11:00 - 12:29
-                # Istirahat Masuk: 12:30 - 14:00
-                # Pulang: > 16:00
-                limit_pagi = time(11, 0, 0)
-                limit_siang_out = time(12, 29, 0)
-                limit_siang_in = time(14, 0, 0)
-                start_sore = time(16, 0, 0)
+                # Istirahat: 11:30 - 13:30
+                limit_siang_out = time(12, 30, 0) # Menangkap absen keluar
+                limit_siang_in  = time(13, 59, 0) # Menangkap absen masuk (target 13:30)
+                start_sore      = time(16, 0, 0)
             else:
                 # === SHIFT 2 (Siang) ===
-                # Pagi (Datang): < 11:00
-                # Istirahat Keluar (Makan): 13:00 - 14:59 (Target 14:00)
-                # Istirahat Masuk (Balik): 15:00 - 16:59 (Target 16:00)
-                # Pulang: > 18:00
-                limit_pagi = time(11, 0, 0)
-                limit_siang_out = time(14, 59, 0) # Menampung jam 14:00
-                limit_siang_in = time(17, 0, 0)  # Menampung jam 16:00
-                start_sore = time(18, 0, 0)      # Pulang jam 19:00
+                # Istirahat: 14:00 - 16:00
+                limit_siang_out = time(15, 0, 0)  # Menangkap absen keluar (target 14:00)
+                limit_siang_in  = time(16, 59, 0) # Menangkap absen masuk (target 16:00)
+                start_sore      = time(18, 0, 0)
 
-            # --- MAPPING WAKTU KE KOLOM ---
+            # Mapping Waktu ke Kolom
             for _, row in sorted_group.iterrows():
                 t = row['Waktu_Obj']
                 val_str = row[AppConstants.COL_EVENT_TIME].strftime(AppConstants.TIME_FORMAT)
                 
-                # 1. Kolom Pagi (Datang)
+                # 1. Pagi (Datang)
                 if t < limit_pagi:
                     if result['Pagi'] == '': result['Pagi'] = val_str
                 
-                # 2. Kolom Siang 1 (Istirahat Keluar)
+                # 2. Siang 1 (Keluar Istirahat)
                 elif limit_pagi <= t <= limit_siang_out:
                     if result['Siang_1'] == '': result['Siang_1'] = val_str
                 
-                # 3. Kolom Siang 2 (Istirahat Masuk/Balik)
+                # 3. Siang 2 (Masuk Istirahat)
                 elif limit_siang_out < t <= limit_siang_in:
                     if result['Siang_2'] == '': result['Siang_2'] = val_str
                 
-                # 4. Kolom Sore (Pulang)
-                # Logic: Ambil yang paling malam jika ada multiple tap
-                elif t >= limit_siang_in: 
-                    result['Sore'] = val_str 
+                # 4. Sore (Pulang)
+                elif t >= start_sore: # Logic sederhana: ambil yg paling malam
+                     result['Sore'] = val_str 
 
             return pd.Series(result)
 
@@ -795,76 +789,100 @@ class ExcelExporter:
         self.fmt_late = workbook.add_format({'font_color': 'red', 'bold': True, 'border': 1, 'align': 'center'})
 
     def _write_sheet_content(self, ws, df: pd.DataFrame, status_dict: Dict[str, str]):
-        # Headers & Formatting (Biarkan sama)
+        # Headers & Formatting
         headers = ['Nama Karyawan', 'Pagi', 'Siang_1', 'Siang_2', 'Sore', 'Keterangan']
         ws.write_row(0, 0, headers, self.fmt_head)
         ws.set_column(0, 0, 30)
         ws.set_column(1, 5, 15)
         
+        # Ambil tanggal untuk cek hari Jumat
+        current_date_obj = None
+        if not df.empty and 'Tanggal' in df.columns:
+             first_val = df['Tanggal'].iloc[0]
+             if isinstance(first_val, (datetime, date)):
+                 current_date_obj = first_val
+        
+        is_friday_global = False
+        if current_date_obj and current_date_obj.weekday() == 4:
+            is_friday_global = True
+
         for idx, row in df.iterrows():
             row_num = idx + 1
+            
+            # Ambil data
             nm = row[AppConstants.COL_EMPLOYEE_NAME]
-            pagi = row.get('Pagi', '')
-            siang1 = row.get('Siang_1', '')
-            siang2 = row.get('Siang_2', '') # Ini jam balik istirahat
-            sore = row.get('Sore', '')
+            pagi_str = row.get('Pagi', '')
+            siang1_str = row.get('Siang_1', '') 
+            siang2_str = row.get('Siang_2', '') 
+            sore_str = row.get('Sore', '')
             manual_stat = status_dict.get(nm, "")
             
-            # --- TENTUKAN SHIFT & BATAS ISTIRAHAT ---
-            # Default batas (Shift 1)
-            batas_balik_istirahat = AppConstants.S1_BREAK_END # 12:30
-            batas_datang_telat = AppConstants.S1_TOLERANSI_MASUK
+            # Convert string ke time objects
+            t_pagi = datetime.strptime(pagi_str, "%H:%M").time() if pagi_str else None
+            t_siang1 = datetime.strptime(siang1_str, "%H:%M").time() if siang1_str else None
+            t_sore = datetime.strptime(sore_str, "%H:%M").time() if sore_str else None
 
+            # --- LOGIKA DETEKSI SHIFT (WATERFALL) ---
             is_shift_2 = False
-            if pagi:
-                try:
-                    t_datang = datetime.strptime(pagi, "%H:%M").time()
-                    if t_datang > AppConstants.CUTOFF_SHIFT_1:
-                        # Ini Anak Shift 2
+            
+            if not is_friday_global:
+                # 1. PRIORITY 1: Cek Jam Keluar Istirahat
+                if t_siang1:
+                    # Kalau keluar istirahat > 13:00, pasti Shift 2 (karena S1 istirahat 11:30)
+                    if t_siang1 > time(13, 0, 0):
                         is_shift_2 = True
-                        batas_balik_istirahat = AppConstants.S2_BREAK_END # 16:00
-                        batas_datang_telat = AppConstants.S2_TOLERANSI_MASUK
-                except:
-                    pass
+                
+                # 2. PRIORITY 2: Kalau Siang 1 kosong, Cek Jam Datang
+                elif t_pagi:
+                    # Kalau datang > 08:25, pasti Shift 2 (karena S1 masuk 07:00)
+                    if t_pagi > AppConstants.CUTOFF_SHIFT_1:
+                        is_shift_2 = True
+                
+                # 3. PRIORITY 3: Kalau Pagi & Siang kosong, Cek Jam Pulang
+                elif t_sore:
+                    # Kalau pulang > 18:00, kemungkinan Shift 2
+                    if t_sore > time(18, 0, 0):
+                        is_shift_2 = True
 
-            # Write Nama & Ket
+            # --- TENTUKAN BATAS MERAH ---
+            if is_friday_global:
+                batas_datang = AppConstants.FRI_TOLERANSI_MASUK
+                batas_balik  = AppConstants.FRI_BREAK_END
+            elif is_shift_2:
+                # Shift 2
+                batas_datang = AppConstants.S2_TOLERANSI_MASUK
+                batas_balik  = AppConstants.S2_BREAK_END
+            else:
+                # Shift 1
+                batas_datang = AppConstants.S1_TOLERANSI_MASUK
+                batas_balik  = AppConstants.S1_BREAK_END
+
+            # --- WRITE DATA ---
+            # 0. Nama & Ket
             ws.write(row_num, 0, nm, self.fmt_norm)
             ws.write(row_num, 5, manual_stat, self.fmt_norm)
-            
-            if manual_stat or (not pagi and not siang1 and not siang2 and not sore):
-                # Handle Izin / Alpha (Logic sama kayak dulu)
-                fmt = self.fmt_full if not manual_stat else self.fmt_norm
-                for i in range(4): ws.write(row_num, i+1, "", fmt)
+
+            # 1. Pagi (Datang)
+            if pagi_str:
+                # Merah jika telat sesuai shift masing-masing
+                fmt = self.fmt_late if t_pagi > batas_datang else self.fmt_norm
+                ws.write(row_num, 1, pagi_str, fmt)
             else:
-                # 1. KOLOM PAGI (Datang)
-                if pagi:
-                    try:
-                        t_pagi = datetime.strptime(pagi, "%H:%M").time()
-                        # Merah jika telat sesuai toleransi shift masing-masing
-                        fmt_pagi = self.fmt_late if t_pagi > batas_datang_telat else self.fmt_norm
-                        ws.write(row_num, 1, pagi, fmt_pagi)
-                    except:
-                        ws.write(row_num, 1, pagi, self.fmt_norm)
-                else:
-                     ws.write(row_num, 1, "", self.fmt_miss)
+                ws.write(row_num, 1, "", self.fmt_miss)
 
-                # 2. KOLOM SIANG 1 (Keluar Istirahat) - Normal aja
-                ws.write(row_num, 2, siang1, self.fmt_norm if siang1 else self.fmt_miss)
+            # 2. Siang 1 (Keluar) - Normal (Tidak ada merah)
+            ws.write(row_num, 2, siang1_str, self.fmt_norm if siang1_str else self.fmt_miss)
 
-                # 3. KOLOM SIANG 2 (Balik Istirahat) - CEK MERAH DISINI
-                if siang2:
-                    try:
-                        t_balik = datetime.strptime(siang2, "%H:%M").time()
-                        # Merah jika Lewat batas (12:30 utk S1, 16:00 utk S2)
-                        fmt_balik = self.fmt_late if t_balik > batas_balik_istirahat else self.fmt_norm
-                        ws.write(row_num, 3, siang2, fmt_balik)
-                    except:
-                        ws.write(row_num, 3, siang2, self.fmt_norm)
-                else:
-                    ws.write(row_num, 3, "", self.fmt_miss)
+            # 3. Siang 2 (Balik) - Merah jika telat balik
+            if siang2_str:
+                t_balik = datetime.strptime(siang2_str, "%H:%M").time()
+                fmt = self.fmt_late if t_balik > batas_balik else self.fmt_norm
+                ws.write(row_num, 3, siang2_str, fmt)
+            else:
+                ws.write(row_num, 3, "", self.fmt_miss) 
 
-                # 4. KOLOM SORE (Pulang) - Normal
-                ws.write(row_num, 4, sore, self.fmt_norm if sore else self.fmt_miss)
+            # 4. Sore (Pulang) - Normal
+            ws.write(row_num, 4, sore_str, self.fmt_norm if sore_str else self.fmt_miss)
 
     def create_attendance_report(self, df: pd.DataFrame, status_dict: Dict[str, str], date: datetime.date, metrics: Any = None):
         """Creates a single sheet report"""
@@ -2874,6 +2892,7 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 
 
 
