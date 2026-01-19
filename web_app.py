@@ -536,7 +536,7 @@ class AttendanceService:
     def extract_time_ranges(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         SMART RANGE: Menentukan kategori waktu (Pagi/Siang/Sore)
-        secara dinamis agar support Shift 1 & Shift 2.
+        FIXED: Menutup 'Dead Zone' agar data jam 17:00-18:00 tidak hilang.
         """
         if df.empty: return pd.DataFrame()
 
@@ -554,7 +554,6 @@ class AttendanceService:
             if sorted_group.empty: return pd.Series(result)
 
             # Cek Hari Jumat
-            # (weekday 4 = Jumat)
             is_friday = sorted_group.iloc[0]['Tanggal'].weekday() == 4
 
             # Ambil jam pertama tap
@@ -568,19 +567,19 @@ class AttendanceService:
                 # Jumat: Istirahat 12:00 - 14:00
                 limit_siang_out = time(12, 59, 0) 
                 limit_siang_in  = time(14, 30, 0)
-                start_sore      = time(16, 0, 0)
+                start_sore      = time(14, 31, 0) # Jumat pulang cepat
             elif first_log <= AppConstants.CUTOFF_SHIFT_1:
                 # === SHIFT 1 (Pagi) ===
                 # Istirahat: 11:30 - 13:30
-                limit_siang_out = time(12, 30, 0) # Menangkap absen keluar
-                limit_siang_in  = time(13, 59, 0) # Menangkap absen masuk (target 13:30)
-                start_sore      = time(16, 0, 0)
+                limit_siang_out = time(12, 30, 0) 
+                limit_siang_in  = time(13, 59, 0) 
+                start_sore      = time(14, 0, 0) # FIXED: Turunkan agar tidak ada gap (sebelumnya 16:00)
             else:
                 # === SHIFT 2 (Siang) ===
                 # Istirahat: 14:00 - 16:00
-                limit_siang_out = time(15, 0, 0)  # Menangkap absen keluar (target 14:00)
-                limit_siang_in  = time(16, 59, 0) # Menangkap absen masuk (target 16:00)
-                start_sore      = time(18, 0, 0)
+                limit_siang_out = time(15, 0, 0)  
+                limit_siang_in  = time(16, 59, 0) 
+                start_sore      = time(17, 0, 0) # FIXED: Turunkan ke 17:00 (sebelumnya 18:00)
 
             # Mapping Waktu ke Kolom
             for _, row in sorted_group.iterrows():
@@ -600,7 +599,8 @@ class AttendanceService:
                     if result['Siang_2'] == '': result['Siang_2'] = val_str
                 
                 # 4. Sore (Pulang)
-                elif t >= start_sore: # Logic sederhana: ambil yg paling malam
+                elif t >= start_sore: 
+                     # Ambil data paling terakhir sebagai jam pulang
                      result['Sore'] = val_str 
 
             return pd.Series(result)
@@ -2898,6 +2898,7 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 
 
 
