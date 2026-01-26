@@ -779,29 +779,23 @@ class ExcelExporter:
 
     def _init_formats(self, workbook):
         """Helper to initialize formats only once per workbook"""
+        # ... (FORMATS SAMA SEPERTI KODINGANMU SEBELUMNYA) ...
         self.fmt_head = workbook.add_format({'bold': True, 'fg_color': '#4caf50', 'font_color': 'white', 'border': 1, 'align': 'center'})
         self.fmt_norm = workbook.add_format({'border': 1, 'align': 'center'})
         self.fmt_miss = workbook.add_format({'bg_color': '#FF0000', 'border': 1, 'align': 'center'}) 
         self.fmt_full = workbook.add_format({'bg_color': '#FFFF00', 'border': 1, 'align': 'center'}) 
         self.fmt_late = workbook.add_format({'font_color': 'red', 'bold': True, 'border': 1, 'align': 'center'})
 
-    def _write_sheet_content(self, ws, df: pd.DataFrame, status_dict: Dict[str, str]):
+    # UPDATE: Tambahkan parameter 'target_date' disini
+    def _write_sheet_content(self, ws, df: pd.DataFrame, status_dict: Dict[str, str], target_date: date):
         # Headers
         headers = ['Nama Karyawan', 'Pagi', 'Siang_1', 'Siang_2', 'Sore', 'Keterangan']
         ws.write_row(0, 0, headers, self.fmt_head)
         ws.set_column(0, 0, 30)
         ws.set_column(1, 5, 15)
         
-        # Cek Hari Jumat
-        current_date_obj = None
-        if not df.empty and 'Tanggal' in df.columns:
-             first_val = df['Tanggal'].iloc[0]
-             if isinstance(first_val, (datetime, date)):
-                 current_date_obj = first_val
-        
-        is_friday_global = False
-        if current_date_obj and current_date_obj.weekday() == 4:
-            is_friday_global = True
+        # LOGIC JUMAT LEBIH AMAN (Cek langsung dari target_date)
+        is_friday_global = (target_date.weekday() == 4)
 
         for idx, row in df.iterrows():
             row_num = idx + 1
@@ -831,28 +825,31 @@ class ExcelExporter:
             t_pagi = None
             
             if pagi_str:
-                t_pagi = datetime.strptime(pagi_str, "%H:%M").time()
-                # Cutoff 08:15 menentukan Shift
-                if t_pagi > AppConstants.SHIFT_CUTOFF:
-                    is_shift_2 = True
+                try:
+                    t_pagi = datetime.strptime(pagi_str, "%H:%M").time()
+                    # Cutoff 08:15 menentukan Shift
+                    if t_pagi > AppConstants.SHIFT_CUTOFF:
+                        is_shift_2 = True
+                except ValueError:
+                    pass
             
             # --- PENENTUAN BATAS MERAH ---
             if is_shift_2:
                 batas_datang = AppConstants.S2_LATE_TOLERANCE # 09:05
                 
                 if is_friday_global:
-                    batas_balik = AppConstants.S1_BREAK_IN_END # 14:00 (Ikut S1)
+                    batas_balik = AppConstants.S1_BREAK_IN_END # 14:00 (Jumat Shift 2 ikut S1)
                 else:
                     batas_balik = AppConstants.S2_NORM_BREAK_IN_END # 16:00
             else:
                 # Shift 1
                 batas_datang = AppConstants.S1_LATE_TOLERANCE # 07:05
-                batas_balik  = AppConstants.S1_BREAK_IN_END   # 14:00
+                batas_balik   = AppConstants.S1_BREAK_IN_END   # 14:00
 
             # --- WRITE CELLS ---
 
             # 1. Pagi (Datang)
-            if pagi_str:
+            if pagi_str and t_pagi:
                 fmt = self.fmt_late if t_pagi > batas_datang else self.fmt_norm
                 ws.write(row_num, 1, pagi_str, fmt)
             else:
@@ -863,51 +860,48 @@ class ExcelExporter:
 
             # 3. Siang 2 (Balik) - Cek Telat Balik
             if siang2_str:
-                t_balik = datetime.strptime(siang2_str, "%H:%M").time()
-                fmt = self.fmt_late if t_balik > batas_balik else self.fmt_norm
-                ws.write(row_num, 3, siang2_str, fmt)
+                try:
+                    t_balik = datetime.strptime(siang2_str, "%H:%M").time()
+                    fmt = self.fmt_late if t_balik > batas_balik else self.fmt_norm
+                    ws.write(row_num, 3, siang2_str, fmt)
+                except ValueError:
+                    ws.write(row_num, 3, siang2_str, self.fmt_norm)
             else:
-                # Jika sudah ada absen Keluar (Siang 1) tapi tidak ada Masuk (Siang 2) -> Merah
-                # Atau jika kosong sama sekali -> Merah
                 ws.write(row_num, 3, "", self.fmt_miss) 
 
             # 4. Sore (Pulang)
-            # Shift 2 jam 18:55 belum dianggap pulang (Strict 19:00)
             ws.write(row_num, 4, sore_str, self.fmt_norm if sore_str else self.fmt_miss)
 
-    def create_attendance_report(self, df: pd.DataFrame, status_dict: Dict[str, str], date: datetime.date, metrics: Any = None):
+    def create_attendance_report(self, df: pd.DataFrame, status_dict: Dict[str, str], date_obj: date, metrics: Any = None):
         """Creates a single sheet report"""
         output = io.BytesIO()
         self.workbook = xlsxwriter.Workbook(output, {'in_memory': True})
         self._init_formats(self.workbook)
         
-        sheet_name = date.strftime('%d-%b') # e.g., 29-Nov
+        sheet_name = date_obj.strftime('%d-%b')
         ws = self.workbook.add_worksheet(sheet_name)
         
-        self._write_sheet_content(ws, df, status_dict)
+        # Pass date_obj explicitly
+        self._write_sheet_content(ws, df, status_dict, target_date=date_obj)
         
         self.workbook.close()
         output.seek(0)
         return output
 
     def create_range_report(self, data_map: Dict[datetime.date, Tuple[pd.DataFrame, Dict]]):
-        """
-        Creates a multi-sheet Excel report for a date range.
-        data_map: Dictionary where Key = Date, Value = (DataFrame, StatusDict)
-        """
+        """Creates a multi-sheet Excel report for a date range."""
         output = io.BytesIO()
         self.workbook = xlsxwriter.Workbook(output, {'in_memory': True})
         self._init_formats(self.workbook)
 
-        # Sort dates to ensure tabs are in order
         sorted_dates = sorted(data_map.keys())
 
-        for date in sorted_dates:
-            df, status_dict = data_map[date]
-            # Sheet name cannot handle special chars or be too long
-            sheet_name = date.strftime('%d-%b') 
+        for date_obj in sorted_dates:
+            df, status_dict = data_map[date_obj]
+            sheet_name = date_obj.strftime('%d-%b') 
             ws = self.workbook.add_worksheet(sheet_name)
-            self._write_sheet_content(ws, df, status_dict)
+            # Pass date_obj explicitly agar logic Jumat per sheet benar
+            self._write_sheet_content(ws, df, status_dict, target_date=date_obj)
 
         self.workbook.close()
         output.seek(0)
@@ -2883,6 +2877,7 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 
 
 
