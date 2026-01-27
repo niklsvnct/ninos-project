@@ -514,113 +514,120 @@ class AttendanceService:
     def extract_time_ranges(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Extracts attendance into Pagi, Siang1, Siang2, Sore columns.
-        LOGIC FIX: Penentuan Shift lebih pintar (Cek jam pulang), bukan cuma jam datang.
+        LOGIC FIX FINAL: 
+        - Default Shift 1.
+        - Shift 2 dideteksi jika Pulang > 18:30 ATAU Datang di jam nanggung (09:00-11:30).
+        - Yoga Nugraha (13:23 & 17:07) akan masuk Shift 1 -> Siang 2 & Sore terisi, Pagi Merah.
         """
         if df.empty: return pd.DataFrame()
 
         df_clean = df.dropna(subset=[AppConstants.COL_PERSON_NAME, 'Tanggal'])
         if df_clean.empty: return pd.DataFrame()
 
+        # Konversi ke object time untuk perbandingan
         df_clean['Waktu_Obj'] = pd.to_datetime(df_clean[AppConstants.COL_EVENT_TIME]).dt.time
         grouped = df_clean.groupby([AppConstants.COL_PERSON_NAME, 'Tanggal'])
         
         def process_group(group):
             result = {'Pagi': '', 'Siang_1': '', 'Siang_2': '', 'Sore': ''}
             
-            # Sortir waktu dari pagi ke malam
+            # 1. Sortir waktu dari pagi ke malam
             sorted_group = group.sort_values(AppConstants.COL_EVENT_TIME)
             if sorted_group.empty: return pd.Series(result)
 
-            # Ambil log pertama dan log terakhir
+            # 2. Ambil data kunci (Log Pertama & Log Terakhir)
             first_log = sorted_group.iloc[0]['Waktu_Obj']
             last_log = sorted_group.iloc[-1]['Waktu_Obj']
             
-            # Cek Hari Jumat (0=Senin, 4=Jumat)
+            # 3. Cek Hari Jumat (0=Senin, 4=Jumat)
             is_friday = sorted_group.iloc[0]['Tanggal'].weekday() == 4
             
-            # --- LOGIKA BARU PENENTUAN SHIFT ---
-            # Default Shift 1.
-            # Berubah jadi Shift 2 HANYA JIKA:
-            # 1. Pulangnya malam (di atas jam 18:30)
-            # 2. ATAU Datangnya jelas-jelas di jam Shift 2 (antara 09:00 - 11:30)
-            
+            # --- LOGIKA PENENTUAN SHIFT (THE FIX) ---
             is_shift_2 = False
             
-            # Batas toleransi pulang shift 1 (biasanya 17:00, dikasih buffer sampai 18:30)
-            batas_wajar_pulang_s1 = time(18, 30, 0)
+            # Rule 1: Jika pulang di atas 18:30, pasti Shift 2 (atau lembur parah, diasumsikan S2)
+            batas_pulang_s1_toleransi = time(18, 30, 0)
             
-            # Range masuk murni Shift 2 (09:00 - 11:30)
+            # Rule 2: Jika datang di jam "bolong" Shift 1 (09:00 - 11:30), kemungkinan Shift 2
             range_masuk_s2_start = time(9, 0, 0)
             range_masuk_s2_end = time(11, 30, 0)
 
-            if last_log > batas_wajar_pulang_s1:
+            if last_log > batas_pulang_s1_toleransi:
                 is_shift_2 = True
             elif range_masuk_s2_start <= first_log <= range_masuk_s2_end:
                 is_shift_2 = True
             
-            # (Kasus Yoga: Datang 13:23, Pulang 17:07)
+            # Kasus Yoga (13:23 & 17:07):
             # last_log (17:07) < 18:30 -> False
             # first_log (13:23) tidak di range 09:00-11:30 -> False
-            # KESIMPULAN: Tetap SHIFT 1. (Valid!)
+            # HASIL: is_shift_2 = False (Tetap Shift 1) -> Masuk logika bawah
 
-            # --- SETTING RANGE WAKTU (SAMA SEPERTI SEBELUMNYA) ---
-            
+            # --- SETTING RANGE WAKTU BERDASARKAN HASIL DI ATAS ---
             if not is_shift_2:
-                # === SHIFT 1 (Logic Lama) ===
+                # === SHIFT 1 (Regular) ===
+                # Pagi sampai jam 11 biar yang telat parah tetep kecatet Pagi (dan merah)
                 limit_pagi_end = time(11, 0, 0) 
+                
                 limit_siang_out_start = AppConstants.S1_BREAK_OUT_START # 12:00
                 limit_siang_out_end    = AppConstants.S1_BREAK_OUT_END    # 12:59
+                
+                # Masuk Siang: Mulai 13:00 sampai 16:00
                 limit_siang_in_start  = AppConstants.S1_BREAK_IN_START  # 13:00
-                limit_siang_in_end     = time(16, 0, 0) # Lebarin sampai 16:00 biar aman
+                limit_siang_in_end     = time(16, 0, 0) 
+                
                 start_sore = AppConstants.S1_HOME_TIME # 17:00
                 
             else:
-                # === SHIFT 2 (Logic Lama) ===
-                limit_pagi_end = time(13, 0, 0) # Datang Shift 2 bisa sampai jam 13:00
+                # === SHIFT 2 (Siang/Malam) ===
+                limit_pagi_end = time(13, 0, 0) # Toleransi datang S2 sampai jam 13
                 
                 if is_friday:
-                    # JUMAT Shift 2
+                    # JUMAT S2 (Ikut jam istirahat S1)
                     limit_siang_out_start = AppConstants.S1_BREAK_OUT_START 
                     limit_siang_out_end    = AppConstants.S1_BREAK_OUT_END   
                     limit_siang_in_start  = AppConstants.S1_BREAK_IN_START  
                     limit_siang_in_end     = time(14, 59, 59)
                 else:
-                    # NORMAL Shift 2
+                    # NORMAL S2 (14:00 - 16:00)
                     limit_siang_out_start = AppConstants.S2_NORM_BREAK_OUT_START 
                     limit_siang_out_end    = AppConstants.S2_NORM_BREAK_OUT_END   
                     limit_siang_in_start  = AppConstants.S2_NORM_BREAK_IN_START  
                     limit_siang_in_end     = time(16, 59, 59)
 
-                start_sore = time(18, 30, 0) # Di atas ini dianggap pulang Shift 2
+                start_sore = time(18, 30, 0) # Pulang S2 biasanya 19:00
 
-            # --- MAPPING KE KOLOM ---
+            # --- MAPPING DATA KE KOLOM (LOOPING) ---
             for _, row in sorted_group.iterrows():
                 t = row['Waktu_Obj']
                 val_str = row[AppConstants.COL_EVENT_TIME].strftime(AppConstants.TIME_FORMAT)
                 
-                # 1. Pagi (Datang)
+                # 1. Cek Pagi (Datang)
                 if t < limit_pagi_end:
                     if result['Pagi'] == '': result['Pagi'] = val_str
                 
-                # 2. Siang 1 (Keluar Istirahat)
+                # 2. Cek Siang 1 (Keluar Istirahat)
                 elif limit_siang_out_start <= t <= limit_siang_out_end:
                     if result['Siang_1'] == '': result['Siang_1'] = val_str
                 
-                # 3. Siang 2 (Masuk Istirahat)
+                # 3. Cek Siang 2 (Masuk Istirahat) -> YOGA (13:23) MASUK SINI
                 elif limit_siang_in_start <= t <= limit_siang_in_end:
                     if result['Siang_2'] == '': result['Siang_2'] = val_str
                 
-                # 4. Sore (Pulang) - Mengambil log paling akhir di hari itu
+                # 4. Cek Sore (Pulang) -> YOGA (17:07) MASUK SINI
                 elif t >= start_sore:
-                    result['Sore'] = val_str # Selalu override biar dapet yang terakhir
+                    result['Sore'] = val_str # Selalu ambil yang paling akhir
                 
-                # FALLBACK: Jika ada jam aneh (misal 17:07), tapi belum masuk 'Sore' karena range start_sore ketat
-                # Kita paksa masuk sore jika dia log terakhir
+                # FALLBACK: Jika log terakhir tapi belum masuk range 'Sore' (misal pulang cepat jam 16:55)
+                # Paksa masuk sore jika dia adalah log terakhir dan sudah lewat jam 16:00
                 if t == last_log and t >= time(16, 0, 0) and result['Sore'] == '':
                      result['Sore'] = val_str
 
             return pd.Series(result)
 
+        if grouped.ngroups == 0: return pd.DataFrame()
+        result_df = grouped.apply(process_group).reset_index()
+        result_df.rename(columns={AppConstants.COL_PERSON_NAME: AppConstants.COL_EMPLOYEE_NAME}, inplace=True)
+        return result_df
         if grouped.ngroups == 0: return pd.DataFrame()
         result_df = grouped.apply(process_group).reset_index()
         result_df.rename(columns={AppConstants.COL_PERSON_NAME: AppConstants.COL_EMPLOYEE_NAME}, inplace=True)
@@ -2896,6 +2903,7 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 
 
 
