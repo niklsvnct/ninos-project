@@ -514,7 +514,7 @@ class AttendanceService:
     def extract_time_ranges(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Extracts attendance into Pagi, Siang1, Siang2, Sore columns.
-        Supports Dual Shift & Friday Exception.
+        LOGIC FIX: Penentuan Shift lebih pintar (Cek jam pulang), bukan cuma jam datang.
         """
         if df.empty: return pd.DataFrame()
 
@@ -527,56 +527,71 @@ class AttendanceService:
         def process_group(group):
             result = {'Pagi': '', 'Siang_1': '', 'Siang_2': '', 'Sore': ''}
             
-            # Sortir waktu
+            # Sortir waktu dari pagi ke malam
             sorted_group = group.sort_values(AppConstants.COL_EVENT_TIME)
             if sorted_group.empty: return pd.Series(result)
 
+            # Ambil log pertama dan log terakhir
+            first_log = sorted_group.iloc[0]['Waktu_Obj']
+            last_log = sorted_group.iloc[-1]['Waktu_Obj']
+            
             # Cek Hari Jumat (0=Senin, 4=Jumat)
             is_friday = sorted_group.iloc[0]['Tanggal'].weekday() == 4
             
-            # --- DETEKSI SHIFT BERDASARKAN LOG PERTAMA ---
-            first_log = sorted_group.iloc[0]['Waktu_Obj']
+            # --- LOGIKA BARU PENENTUAN SHIFT ---
+            # Default Shift 1.
+            # Berubah jadi Shift 2 HANYA JIKA:
+            # 1. Pulangnya malam (di atas jam 18:30)
+            # 2. ATAU Datangnya jelas-jelas di jam Shift 2 (antara 09:00 - 11:30)
             
-            # Default anggap Shift 1
             is_shift_2 = False
             
-            # Jika log pertama > 08:15, maka dia Shift 2
-            if first_log > AppConstants.SHIFT_CUTOFF:
+            # Batas toleransi pulang shift 1 (biasanya 17:00, dikasih buffer sampai 18:30)
+            batas_wajar_pulang_s1 = time(18, 30, 0)
+            
+            # Range masuk murni Shift 2 (09:00 - 11:30)
+            range_masuk_s2_start = time(9, 0, 0)
+            range_masuk_s2_end = time(11, 30, 0)
+
+            if last_log > batas_wajar_pulang_s1:
+                is_shift_2 = True
+            elif range_masuk_s2_start <= first_log <= range_masuk_s2_end:
                 is_shift_2 = True
             
-            # --- SETTING RANGE WAKTU BERDASARKAN SHIFT ---
+            # (Kasus Yoga: Datang 13:23, Pulang 17:07)
+            # last_log (17:07) < 18:30 -> False
+            # first_log (13:23) tidak di range 09:00-11:30 -> False
+            # KESIMPULAN: Tetap SHIFT 1. (Valid!)
+
+            # --- SETTING RANGE WAKTU (SAMA SEPERTI SEBELUMNYA) ---
             
             if not is_shift_2:
-                # === SHIFT 1 ===
-                # Pagi: < 08:15 (Sebenarnya bisa sampai 11:00 buat jaga2, tapi cutoff 08:15)
+                # === SHIFT 1 (Logic Lama) ===
                 limit_pagi_end = time(11, 0, 0) 
-                
-                # Istirahat (Shift 1 Sama Terus tiap hari)
                 limit_siang_out_start = AppConstants.S1_BREAK_OUT_START # 12:00
-                limit_siang_out_end   = AppConstants.S1_BREAK_OUT_END   # 12:59
+                limit_siang_out_end    = AppConstants.S1_BREAK_OUT_END    # 12:59
                 limit_siang_in_start  = AppConstants.S1_BREAK_IN_START  # 13:00
-                limit_siang_in_end    = time(14, 59, 59) # Kita lebarin dikit capturenya
-                
+                limit_siang_in_end     = time(16, 0, 0) # Lebarin sampai 16:00 biar aman
                 start_sore = AppConstants.S1_HOME_TIME # 17:00
                 
             else:
-                # === SHIFT 2 ===
-                limit_pagi_end = time(12, 0, 0) # Datang
+                # === SHIFT 2 (Logic Lama) ===
+                limit_pagi_end = time(13, 0, 0) # Datang Shift 2 bisa sampai jam 13:00
                 
                 if is_friday:
-                    # JUMAT: Ikut jam Shift 1
-                    limit_siang_out_start = AppConstants.S1_BREAK_OUT_START # 12:00
-                    limit_siang_out_end   = AppConstants.S1_BREAK_OUT_END   # 12:59
-                    limit_siang_in_start  = AppConstants.S1_BREAK_IN_START  # 13:00
-                    limit_siang_in_end    = time(14, 59, 59)
+                    # JUMAT Shift 2
+                    limit_siang_out_start = AppConstants.S1_BREAK_OUT_START 
+                    limit_siang_out_end    = AppConstants.S1_BREAK_OUT_END   
+                    limit_siang_in_start  = AppConstants.S1_BREAK_IN_START  
+                    limit_siang_in_end     = time(14, 59, 59)
                 else:
-                    # NORMAL: Jam 14 - 16
-                    limit_siang_out_start = AppConstants.S2_NORM_BREAK_OUT_START # 14:00
-                    limit_siang_out_end   = AppConstants.S2_NORM_BREAK_OUT_END   # 14:59
-                    limit_siang_in_start  = AppConstants.S2_NORM_BREAK_IN_START  # 15:00
-                    limit_siang_in_end    = time(16, 59, 59) # Lebarin dikit capturenya
+                    # NORMAL Shift 2
+                    limit_siang_out_start = AppConstants.S2_NORM_BREAK_OUT_START 
+                    limit_siang_out_end    = AppConstants.S2_NORM_BREAK_OUT_END   
+                    limit_siang_in_start  = AppConstants.S2_NORM_BREAK_IN_START  
+                    limit_siang_in_end     = time(16, 59, 59)
 
-                start_sore = AppConstants.S2_HOME_TIME # 19:00 (STRICT)
+                start_sore = time(18, 30, 0) # Di atas ini dianggap pulang Shift 2
 
             # --- MAPPING KE KOLOM ---
             for _, row in sorted_group.iterrows():
@@ -595,10 +610,14 @@ class AttendanceService:
                 elif limit_siang_in_start <= t <= limit_siang_in_end:
                     if result['Siang_2'] == '': result['Siang_2'] = val_str
                 
-                # 4. Sore (Pulang)
+                # 4. Sore (Pulang) - Mengambil log paling akhir di hari itu
                 elif t >= start_sore:
-                    # Ambil yang paling terakhir
-                    result['Sore'] = val_str
+                    result['Sore'] = val_str # Selalu override biar dapet yang terakhir
+                
+                # FALLBACK: Jika ada jam aneh (misal 17:07), tapi belum masuk 'Sore' karena range start_sore ketat
+                # Kita paksa masuk sore jika dia log terakhir
+                if t == last_log and t >= time(16, 0, 0) and result['Sore'] == '':
+                     result['Sore'] = val_str
 
             return pd.Series(result)
 
@@ -2877,6 +2896,7 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 
 
 
