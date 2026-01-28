@@ -810,14 +810,12 @@ class ExcelExporter:
 
     def _init_formats(self, workbook):
         """Helper to initialize formats only once per workbook"""
-        # ... (FORMATS SAMA SEPERTI KODINGANMU SEBELUMNYA) ...
         self.fmt_head = workbook.add_format({'bold': True, 'fg_color': '#4caf50', 'font_color': 'white', 'border': 1, 'align': 'center'})
         self.fmt_norm = workbook.add_format({'border': 1, 'align': 'center'})
         self.fmt_miss = workbook.add_format({'bg_color': '#FF0000', 'border': 1, 'align': 'center'}) 
         self.fmt_full = workbook.add_format({'bg_color': '#FFFF00', 'border': 1, 'align': 'center'}) 
         self.fmt_late = workbook.add_format({'font_color': 'red', 'bold': True, 'border': 1, 'align': 'center'})
 
-    # UPDATE: Tambahkan parameter 'target_date' disini
     def _write_sheet_content(self, ws, df: pd.DataFrame, status_dict: Dict[str, str], target_date: date):
         # Headers
         headers = ['Nama Karyawan', 'Pagi', 'Siang_1', 'Siang_2', 'Sore', 'Keterangan']
@@ -825,7 +823,6 @@ class ExcelExporter:
         ws.set_column(0, 0, 30)
         ws.set_column(1, 5, 15)
         
-        # LOGIC JUMAT LEBIH AMAN (Cek langsung dari target_date)
         is_friday_global = (target_date.weekday() == 4)
 
         for idx, row in df.iterrows():
@@ -851,36 +848,49 @@ class ExcelExporter:
                 for i in range(1, 5): ws.write(row_num, i, "", self.fmt_full)
                 continue 
 
-            # --- DETEKSI SHIFT UNTUK PEWARNAAN ---
+            # --- SINKRONISASI LOGIKA DETEKSI SHIFT (MIRRORING DASHBOARD) ---
+            # Kita perlu menebak dia Shift 1 atau 2 supaya batas merahnya benar
             is_shift_2 = False
-            t_pagi = None
             
-            if pagi_str:
+            # 1. Cek Jam Pulang (Rule Dewa)
+            if sore_str:
                 try:
-                    t_pagi = datetime.strptime(pagi_str, "%H:%M").time()
-                    # Cutoff 08:15 menentukan Shift
-                    if t_pagi > AppConstants.SHIFT_CUTOFF:
+                    t_pulang = datetime.strptime(sore_str, "%H:%M").time()
+                    if t_pulang > time(19, 0, 0): # Lebih dari 19:00 fix Shift 2
                         is_shift_2 = True
                 except ValueError:
                     pass
+
+            # 2. Cek Jam Datang (Rule Jam Nanggung)
+            t_pagi = None
+            if pagi_str:
+                try:
+                    t_pagi = datetime.strptime(pagi_str, "%H:%M").time()
+                    # Jika belum terdeteksi S2 dari pulang, cek jam datang
+                    if not is_shift_2:
+                        if time(8, 0, 0) <= t_pagi <= time(11, 30, 0):
+                            is_shift_2 = True
+                except ValueError:
+                    pass
             
-            # --- PENENTUAN BATAS MERAH ---
+            # --- TENTUKAN BATAS MERAH BERDASARKAN HASIL DI ATAS ---
             if is_shift_2:
+                # Shift 2
                 batas_datang = AppConstants.S2_LATE_TOLERANCE # 09:05
-                
                 if is_friday_global:
-                    batas_balik = AppConstants.S1_BREAK_IN_END # 14:00 (Jumat Shift 2 ikut S1)
+                    batas_balik = AppConstants.S1_BREAK_IN_END # 14:00 (Jumat)
                 else:
-                    batas_balik = AppConstants.S2_NORM_BREAK_IN_END # 16:00
+                    batas_balik = time(16, 0, 0) # Normal S2 (16:00)
             else:
                 # Shift 1
                 batas_datang = AppConstants.S1_LATE_TOLERANCE # 07:05
-                batas_balik   = AppConstants.S1_BREAK_IN_END   # 14:00
+                batas_balik = time(14, 0, 0) # Normal S1 (14:00)
 
-            # --- WRITE CELLS ---
+            # --- WRITE CELLS WITH COLORING ---
 
             # 1. Pagi (Datang)
             if pagi_str and t_pagi:
+                # Logic Merah: Jika jam datang > batas toleransi
                 fmt = self.fmt_late if t_pagi > batas_datang else self.fmt_norm
                 ws.write(row_num, 1, pagi_str, fmt)
             else:
@@ -912,7 +922,6 @@ class ExcelExporter:
         sheet_name = date_obj.strftime('%d-%b')
         ws = self.workbook.add_worksheet(sheet_name)
         
-        # Pass date_obj explicitly
         self._write_sheet_content(ws, df, status_dict, target_date=date_obj)
         
         self.workbook.close()
@@ -931,13 +940,11 @@ class ExcelExporter:
             df, status_dict = data_map[date_obj]
             sheet_name = date_obj.strftime('%d-%b') 
             ws = self.workbook.add_worksheet(sheet_name)
-            # Pass date_obj explicitly agar logic Jumat per sheet benar
             self._write_sheet_content(ws, df, status_dict, target_date=date_obj)
 
         self.workbook.close()
         output.seek(0)
         return output
-
 # ================================================================================
 # SECTION 5: UI STYLING LAYER
 # ================================================================================
@@ -2908,6 +2915,7 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 
 
 
