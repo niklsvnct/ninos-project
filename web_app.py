@@ -2131,7 +2131,7 @@ class AttendanceController:
         st.markdown("---")
         
         # 4. Build report variables (df_final & metrics)
-        with st.spinner("🔄 Loading flight data..."):
+        with st.spinner("🔄 Loading data..."):
             df_final, status_dict = self.attendance_service.build_complete_report(selected_date)
             metrics = self.attendance_service.calculate_metrics(df_final, status_dict)
         
@@ -2989,6 +2989,7 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 
 
 
