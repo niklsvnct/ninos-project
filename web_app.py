@@ -49,7 +49,7 @@ class AppConstants:
     # --- LOGIC CONSTANTS ---
     
     # PEMISAH SHIFT (Jantung Logika)
-    SHIFT_CUTOFF = time(7, 35, 0)  # <= 08:15 Shift 1, > 08:15 Shift 2
+    SHIFT_CUTOFF = time(8, 0, 0)  # <= 08:15 Shift 1, > 08:15 Shift 2
     
     # ATURAN SHIFT 1 (07:00 - 17:00)
     S1_LATE_TOLERANCE = time(7, 5, 0)      # Lewat 07:05 = Merah
@@ -431,10 +431,9 @@ class TimeService:
     """
     
     @staticmethod
-    def is_late(time_str: Optional[str]) -> Tuple[bool, str]:
+    def is_late(time_str: Optional[str], employee_name: str = "", evening_str: Optional[str] = None) -> Tuple[bool, str]:
         """
-        Check late arrival based on Dual Shift logic (Cutoff 08:15).
-        Returns: (is_late_bool, shift_label)
+        Final Logic: Kombinasi Jam Pulang (Rule Dewa) & Cutoff Normal.
         """
         if not time_str:
             return False, ""
@@ -442,15 +441,48 @@ class TimeService:
         try:
             check_time = datetime.strptime(time_str, AppConstants.TIME_FORMAT).time()
             
-            # LOGIKA UTAMA: Tentukan Shift berdasarkan jam datang
-            if check_time <= AppConstants.SHIFT_CUTOFF:
-                # SHIFT 1
-                is_late_val = check_time > AppConstants.S1_LATE_TOLERANCE # > 07:05
-                return is_late_val, "SHIFT 1"
-            else:
-                # SHIFT 2
-                is_late_val = check_time > AppConstants.S2_LATE_TOLERANCE # > 09:05
+            # --- TENTUKAN TIPE SHIFT ---
+            detected_shift = "UNKNOWN"
+            
+            # 1. CEK JAM PULANG (Indikator Paling Akurat / Rule Dewa)
+            # Faturrahman (Pulang 19:00) akan selamat di sini.
+            if evening_str:
+                try:
+                    evening_time = datetime.strptime(evening_str, AppConstants.TIME_FORMAT).time()
+                    if evening_time > time(18, 0, 0): # Jika pulang > 18:00, pasti Shift 2
+                        detected_shift = "SHIFT 2"
+                    else:
+                        # Jika pulang sore (misal 17:00) atau siang, kemungkinan Shift 1
+                        detected_shift = "SHIFT 1"
+                except:
+                    pass
+            
+            # 2. JIKA SHIFT BELUM KETEMU (Atau data pulang kosong), PAKAI LOGIKA CUTOFF
+            if detected_shift == "UNKNOWN":
+                # Cek Override Divisi (Opsional, buat jaga-jaga)
+                division_config = DivisionRegistry.find_by_member(employee_name)
+                is_special = division_config and division_config.name in getattr(AppConstants, 'SHIFT_2_DIVISIONS', [])
+                
+                if is_special:
+                    detected_shift = "SHIFT 2"
+                # KEMBALI KE LOGIKA CUTOFF NORMAL (08:00)
+                # Daniel (07:26) < 08:00 -> Masuk SHIFT 1 -> Kena Telat
+                elif check_time <= AppConstants.SHIFT_CUTOFF:
+                    detected_shift = "SHIFT 1"
+                else:
+                    detected_shift = "SHIFT 2"
+
+            # --- CEK KETERLAMBATAN BERDASARKAN SHIFT ---
+            if detected_shift == "SHIFT 2":
+                # Shift 2 (Masuk 09:00, Toleransi 09:05)
+                # Faturrahman (07:18) -> Aman
+                is_late_val = check_time > AppConstants.S2_LATE_TOLERANCE 
                 return is_late_val, "SHIFT 2"
+            else:
+                # Shift 1 (Masuk 07:00, Toleransi 07:05)
+                # Daniel (07:26) -> Telat (TRUE)
+                is_late_val = check_time > AppConstants.S1_LATE_TOLERANCE
+                return is_late_val, "SHIFT 1"
 
         except (ValueError, TypeError):
             return False, ""
@@ -690,13 +722,18 @@ class AttendanceService:
                 morning_time = row.get('Pagi', '')
                 
                 # --- PERBAIKAN DISINI ---
+                # --- PERBAIKAN DI SINI ---
                 if morning_time:
-                    # Bongkar paket tuple (is_late_status, shift_label)
-                    is_late_status, _ = self.time_service.is_late(morning_time)
+                    # Ambil jam pulang dari row
+                    evening_time = row.get('Sore', '')
                     
-                    if is_late_status: # Cek nilai boolean-nya saja
+                    # PASSING LENGKAP: Waktu Datang, Nama, Waktu Pulang
+                    is_late_status, _ = self.time_service.is_late(morning_time, name, evening_time)
+                    
+                    if is_late_status:
                         late_count += 1
                         late_list.append((name, morning_time))
+                # ------------------------
                 # ------------------------
 
                 if empty_count > 0:
@@ -889,9 +926,12 @@ class ExcelExporter:
             # --- WRITE CELLS WITH COLORING ---
 
             # 1. Pagi (Datang)
+            # 1. Pagi (Datang)
             if pagi_str and t_pagi:
-                # Logic Merah: Jika jam datang > batas toleransi
-                fmt = self.fmt_late if t_pagi > batas_datang else self.fmt_norm
+                # Tambahkan parameter sore_str
+                is_late_excel, _ = TimeService.is_late(pagi_str, nm, sore_str) 
+                
+                fmt = self.fmt_late if is_late_excel else self.fmt_norm
                 ws.write(row_num, 1, pagi_str, fmt)
             else:
                 ws.write(row_num, 1, "", self.fmt_miss) # Merah Kosong
@@ -1559,12 +1599,13 @@ class ComponentRenderer:
             status_text = status.display_text
         
         # Check if late (UPDATED DUAL SHIFT)
+        # Check if late
         is_late = False
         shift_label = ""
         
         if morning:
-            # Panggil fungsi logic baru yang mengembalikan 2 data
-            is_late_status, shift_name = self.time_service.is_late(morning)
+            # Panggil fungsi logic baru DENGAN NAME & EVENING
+            is_late_status, shift_name = self.time_service.is_late(morning, name, evening)
             is_late = is_late_status
             shift_label = shift_name
 
@@ -2915,6 +2956,7 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 
 
 
