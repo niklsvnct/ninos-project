@@ -431,56 +431,63 @@ class TimeService:
     """
     
     @staticmethod
-    def is_late(time_str: Optional[str], employee_name: str = "", evening_str: Optional[str] = None) -> Tuple[bool, str]:
+    def is_late(time_str: Optional[str], employee_name: str = "", evening_str: Optional[str] = None, break_out_str: Optional[str] = None) -> Tuple[bool, str]:
         """
-        Final Logic: Kombinasi Jam Pulang (Rule Dewa) & Cutoff Normal.
+        Final Ultimate Logic: 
+        1. Cek Jam Pulang (Rule Dewa 1)
+        2. Cek Jam Istirahat (Rule Dewa 2 - Solusi Noval)
+        3. Cek Jam Datang (Fallback)
         """
         if not time_str:
             return False, ""
         
         try:
             check_time = datetime.strptime(time_str, AppConstants.TIME_FORMAT).time()
-            
-            # --- TENTUKAN TIPE SHIFT ---
             detected_shift = "UNKNOWN"
             
-            # 1. CEK JAM PULANG (Indikator Paling Akurat / Rule Dewa)
-            # Faturrahman (Pulang 19:00) akan selamat di sini.
+            # --- 1. CEK JAM PULANG (Indikator Paling Akurat) ---
             if evening_str:
                 try:
                     evening_time = datetime.strptime(evening_str, AppConstants.TIME_FORMAT).time()
-                    if evening_time > time(18, 0, 0): # Jika pulang > 18:00, pasti Shift 2
+                    if evening_time > time(18, 0, 0): 
                         detected_shift = "SHIFT 2"
                     else:
-                        # Jika pulang sore (misal 17:00) atau siang, kemungkinan Shift 1
                         detected_shift = "SHIFT 1"
                 except:
                     pass
+
+            # --- 2. CEK JAM ISTIRAHAT (Solusi Kasus Noval 07:59 tapi Istirahat 14:00) ---
+            # Jika shift belum ketemu lewat jam pulang, cek jam istirahatnya
+            if detected_shift == "UNKNOWN" and break_out_str:
+                try:
+                    break_time = datetime.strptime(break_out_str, AppConstants.TIME_FORMAT).time()
+                    # Jika istirahat di atas jam 13:30, dia PASTI Shift 2
+                    # (Karena Shift 1 istirahat jam 12:00)
+                    if break_time > time(13, 30, 0):
+                        detected_shift = "SHIFT 2"
+                except:
+                    pass
             
-            # 2. JIKA SHIFT BELUM KETEMU (Atau data pulang kosong), PAKAI LOGIKA CUTOFF
+            # --- 3. FALLBACK: PAKAI JAM DATANG (08:00) ---
             if detected_shift == "UNKNOWN":
-                # Cek Override Divisi (Opsional, buat jaga-jaga)
                 division_config = DivisionRegistry.find_by_member(employee_name)
                 is_special = division_config and division_config.name in getattr(AppConstants, 'SHIFT_2_DIVISIONS', [])
                 
                 if is_special:
                     detected_shift = "SHIFT 2"
-                # KEMBALI KE LOGIKA CUTOFF NORMAL (08:00)
-                # Daniel (07:26) < 08:00 -> Masuk SHIFT 1 -> Kena Telat
+                # Noval (07:59) akan lolos di Rule No. 2 di atas, jadi tidak kena cutoff ini
                 elif check_time <= AppConstants.SHIFT_CUTOFF:
                     detected_shift = "SHIFT 1"
                 else:
                     detected_shift = "SHIFT 2"
 
-            # --- CEK KETERLAMBATAN BERDASARKAN SHIFT ---
+            # --- CEK KETERLAMBATAN ---
             if detected_shift == "SHIFT 2":
-                # Shift 2 (Masuk 09:00, Toleransi 09:05)
-                # Faturrahman (07:18) -> Aman
+                # Toleransi 09:05 -> Noval (07:59) AMAN
                 is_late_val = check_time > AppConstants.S2_LATE_TOLERANCE 
                 return is_late_val, "SHIFT 2"
             else:
-                # Shift 1 (Masuk 07:00, Toleransi 07:05)
-                # Daniel (07:26) -> Telat (TRUE)
+                # Toleransi 07:05
                 is_late_val = check_time > AppConstants.S1_LATE_TOLERANCE
                 return is_late_val, "SHIFT 1"
 
@@ -615,49 +622,62 @@ class AttendanceService:
                 # ... (kode sebelumnya tetap sama) ...
             
             # --- SETTING RANGE WAKTU (PEMBAGIAN SLOT) ---
+            # --- SETTING RANGE WAKTU (PEMBAGIAN SLOT) ---
             if not is_shift_2:
                 # === SHIFT 1 ===
+                # Pagi Stop di 11:00
                 limit_pagi_end = time(11, 0, 0) 
                 
-                # Range Siang 1 (Istirahat Keluar)
-                limit_siang_out_start = time(11, 1, 0) 
+                # KOLOM 1 (Keluar Istirahat): 12:00 - 12:59
+                limit_siang_out_start = time(11, 30, 0) 
                 limit_siang_out_end     = time(12, 59, 59) 
                 
-                # ... (kode bawahnya tetap sama) ...
+                # KOLOM 2 (Masuk Istirahat): 13:00 - 14:00
+                limit_siang_in_start   = time(13, 0, 0)
+                limit_siang_in_end      = time(14, 0, 0) 
+
+                # ATURAN PULANG SHIFT 1: Minimal Jam 17:00
+                start_sore = time(17, 0, 0)
                 
             else:
                 # === SHIFT 2 ===
-                # PERBAIKAN: Batasi Pagi maks jam 11:00.
-                # Supaya scan jam 11:20 atau 12:00 TIDAK dianggap Pagi, melainkan Istirahat/Siang
                 limit_pagi_end = time(11, 0, 0)  
                 
-                if is_friday:
-                    # Jumat Shift 2
-                    limit_siang_out_start = time(11, 0, 1) # Mulai cek istirahat dari 11:01
-                    limit_siang_out_end     = time(12, 59, 59)
-                    limit_siang_in_start   = time(13, 0, 0)
-                    limit_siang_in_end      = time(14, 59, 59)
-                else:
-                    # Normal Shift 2
-                    limit_siang_out_start = time(11, 0, 1) # Mulai cek istirahat dari 11:01
-                    limit_siang_out_end     = time(14, 59, 59)
-                    limit_siang_in_start   = time(15, 0, 0)
-                    limit_siang_in_end      = time(16, 59, 59)
+                # KOLOM 1 (Keluar Istirahat): 14:00 - 14:59
+                limit_siang_out_start = time(13, 30, 0) 
+                limit_siang_out_end     = time(14, 59, 59)
+                
+                # KOLOM 2 (Masuk Istirahat): 15:00 - 16:00
+                limit_siang_in_start   = time(15, 0, 0)
+                limit_siang_in_end      = time(16, 0, 0)
 
-                start_sore = time(18, 30, 0)
+                # ATURAN PULANG SHIFT 2: Minimal Jam 19:00
+                start_sore = time(19, 0, 0)
+
+            # ... (kode bawahnya tetap sama) ...
                 
                 if is_friday:
-                    limit_siang_out_start = time(11, 30, 0)
-                    limit_siang_out_end    = time(12, 59, 59)
-                    limit_siang_in_start  = time(13, 0, 0)
-                    limit_siang_in_end     = time(14, 59, 59)
-                else:
-                    limit_siang_out_start = time(13, 30, 0)
-                    limit_siang_out_end    = time(14, 59, 59)
-                    limit_siang_in_start  = time(15, 0, 0)
-                    limit_siang_in_end     = time(16, 59, 59)
+                # Jumat Shift 2 (Ikut jam istirahat Jumat: 12:00 - 14:00)
+                
+                # KOLOM 1: 12:00 - 12:59 (Buffer dari 11:30)
+                limit_siang_out_start = time(11, 30, 0) 
+                limit_siang_out_end     = time(12, 59, 59)
+                
+                # KOLOM 2: 13:00 - 14:00 (KETAT, jam 14:01 dianggap telat/bukan istirahat)
+                limit_siang_in_start   = time(13, 0, 0)
+                limit_siang_in_end      = time(14, 0, 0) 
+                
+            else:
+                # Normal Shift 2 (Senin-Kamis, Sabtu-Minggu)
+                # Istirahat 14:00 - 16:00
+                limit_siang_out_start = time(13, 30, 0) 
+                limit_siang_out_end     = time(14, 59, 59)
+                
+                limit_siang_in_start   = time(15, 0, 0)
+                limit_siang_in_end      = time(16, 0, 0)
 
-                start_sore = time(18, 30, 0)
+            # ATURAN PULANG SHIFT 2: Tetap jam 19:00 (Jumat pun pulangnya sama kan?)
+            start_sore = time(19, 0, 0)
 
             # --- MAPPING DATA KE KOLOM ---
             for _, row in sorted_group.iterrows():
@@ -2989,6 +3009,7 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 
 
 
