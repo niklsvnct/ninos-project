@@ -49,7 +49,7 @@ class AppConstants:
     # --- LOGIC CONSTANTS ---
     
     # PEMISAH SHIFT (Jantung Logika)
-    SHIFT_CUTOFF = time(8, 15, 0)  # <= 08:15 Shift 1, > 08:15 Shift 2
+    SHIFT_CUTOFF = time(7, 35, 0)  # <= 08:15 Shift 1, > 08:15 Shift 2
     
     # ATURAN SHIFT 1 (07:00 - 17:00)
     S1_LATE_TOLERANCE = time(7, 5, 0)      # Lewat 07:05 = Merah
@@ -2915,6 +2915,7 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 
 
 
