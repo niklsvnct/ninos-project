@@ -612,6 +612,39 @@ class AttendanceService:
                 # Pagi Shift 2 bisa datang jam 07:00 (Tesalonika 07:47 masuk sini)
                 # Tapi toleransi telatnya nanti dicek di TimeService (09:05)
                 limit_pagi_end = time(13, 0, 0) 
+                # ... (kode sebelumnya tetap sama) ...
+            
+            # --- SETTING RANGE WAKTU (PEMBAGIAN SLOT) ---
+            if not is_shift_2:
+                # === SHIFT 1 ===
+                limit_pagi_end = time(11, 0, 0) 
+                
+                # Range Siang 1 (Istirahat Keluar)
+                limit_siang_out_start = time(11, 1, 0) 
+                limit_siang_out_end     = time(12, 59, 59) 
+                
+                # ... (kode bawahnya tetap sama) ...
+                
+            else:
+                # === SHIFT 2 ===
+                # PERBAIKAN: Batasi Pagi maks jam 11:00.
+                # Supaya scan jam 11:20 atau 12:00 TIDAK dianggap Pagi, melainkan Istirahat/Siang
+                limit_pagi_end = time(11, 0, 0)  
+                
+                if is_friday:
+                    # Jumat Shift 2
+                    limit_siang_out_start = time(11, 0, 1) # Mulai cek istirahat dari 11:01
+                    limit_siang_out_end     = time(12, 59, 59)
+                    limit_siang_in_start   = time(13, 0, 0)
+                    limit_siang_in_end      = time(14, 59, 59)
+                else:
+                    # Normal Shift 2
+                    limit_siang_out_start = time(11, 0, 1) # Mulai cek istirahat dari 11:01
+                    limit_siang_out_end     = time(14, 59, 59)
+                    limit_siang_in_start   = time(15, 0, 0)
+                    limit_siang_in_end      = time(16, 59, 59)
+
+                start_sore = time(18, 30, 0)
                 
                 if is_friday:
                     limit_siang_out_start = time(11, 30, 0)
@@ -2956,6 +2989,7 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 
 
 
