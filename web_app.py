@@ -623,12 +623,15 @@ class AttendanceService:
             
             # --- SETTING RANGE WAKTU (PEMBAGIAN SLOT) ---
             # --- SETTING RANGE WAKTU (PEMBAGIAN SLOT) ---
+            # --- SETTING RANGE WAKTU (PEMBAGIAN SLOT) ---
             if not is_shift_2:
-                # === SHIFT 1 ===
-                # Pagi Stop di 11:00
+                # ==========================================
+                # LOGIKA SHIFT 1 (PAGI)
+                # ==========================================
                 limit_pagi_end = time(11, 0, 0) 
                 
                 # KOLOM 1 (Keluar Istirahat): 12:00 - 12:59
+                # Buffer 11:30
                 limit_siang_out_start = time(11, 30, 0) 
                 limit_siang_out_end     = time(12, 59, 59) 
                 
@@ -640,44 +643,37 @@ class AttendanceService:
                 start_sore = time(17, 0, 0)
                 
             else:
-                # === SHIFT 2 ===
+                # ==========================================
+                # LOGIKA SHIFT 2 (SIANG)
+                # ==========================================
                 limit_pagi_end = time(11, 0, 0)  
                 
-                # KOLOM 1 (Keluar Istirahat): 14:00 - 14:59
-                limit_siang_out_start = time(13, 30, 0) 
-                limit_siang_out_end     = time(14, 59, 59)
-                
-                # KOLOM 2 (Masuk Istirahat): 15:00 - 16:00
-                limit_siang_in_start   = time(15, 0, 0)
-                limit_siang_in_end      = time(16, 0, 0)
-
-                # ATURAN PULANG SHIFT 2: Minimal Jam 19:00
-                start_sore = time(19, 0, 0)
-
-            # ... (kode bawahnya tetap sama) ...
-                
                 if is_friday:
-                # Jumat Shift 2 (Ikut jam istirahat Jumat: 12:00 - 14:00)
-                
-                # KOLOM 1: 12:00 - 12:59 (Buffer dari 11:30)
-                limit_siang_out_start = time(11, 30, 0) 
-                limit_siang_out_end     = time(12, 59, 59)
-                
-                # KOLOM 2: 13:00 - 14:00 (KETAT, jam 14:01 dianggap telat/bukan istirahat)
-                limit_siang_in_start   = time(13, 0, 0)
-                limit_siang_in_end      = time(14, 0, 0) 
-                
-            else:
-                # Normal Shift 2 (Senin-Kamis, Sabtu-Minggu)
-                # Istirahat 14:00 - 16:00
-                limit_siang_out_start = time(13, 30, 0) 
-                limit_siang_out_end     = time(14, 59, 59)
-                
-                limit_siang_in_start   = time(15, 0, 0)
-                limit_siang_in_end      = time(16, 0, 0)
+                    # --- KHUSUS HARI JUMAT SHIFT 2 ---
+                    # Istirahat: 12:00 - 14:00
+                    
+                    # Kolom 1 (Keluar): 11:30 - 12:59
+                    limit_siang_out_start = time(11, 30, 0) 
+                    limit_siang_out_end     = time(12, 59, 59)
+                    
+                    # Kolom 2 (Masuk): 13:00 - 14:00
+                    limit_siang_in_start   = time(13, 0, 0)
+                    limit_siang_in_end      = time(14, 0, 0) 
+                    
+                else:
+                    # --- HARI NORMAL SHIFT 2 (Senin-Kamis, Sabtu-Minggu) ---
+                    # Istirahat: 14:00 - 16:00
+                    
+                    # Kolom 1 (Keluar): 13:30 - 14:59
+                    limit_siang_out_start = time(13, 30, 0) 
+                    limit_siang_out_end     = time(14, 59, 59)
+                    
+                    # Kolom 2 (Masuk): 15:00 - 16:00
+                    limit_siang_in_start   = time(15, 0, 0)
+                    limit_siang_in_end      = time(16, 0, 0)
 
-            # ATURAN PULANG SHIFT 2: Tetap jam 19:00 (Jumat pun pulangnya sama kan?)
-            start_sore = time(19, 0, 0)
+                # ATURAN PULANG SHIFT 2: Minimal Jam 19:00 (Berlaku Tiap Hari)
+                start_sore = time(19, 0, 0)
 
             # --- MAPPING DATA KE KOLOM ---
             for _, row in sorted_group.iterrows():
@@ -3009,6 +3005,7 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 
 
 
