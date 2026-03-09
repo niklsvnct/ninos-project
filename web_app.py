@@ -321,12 +321,35 @@ class AttendanceRepository(DataRepository):
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         # ==========================================
-        # 0. PENYELAMAT JIKA DATA KOSONG (FALLBACK SCHEMA)
+        # 0. PENYELAMAT JIKA DATA KOSONG
         # ==========================================
         empty_schema = pd.DataFrame(columns=[
             AppConstants.COL_PERSON_NAME, AppConstants.COL_EVENT_TIME, 
             'Tanggal', 'Waktu', 'Jam', 'Menit', 'Hari'
         ])
+
+        if df.empty:
+            return empty_schema
+
+        # =================================================================
+        # 0.5 TRANSLATOR NAMA (MESIN -> DASHBOARD) [FITUR BARU]
+        # Mengubah nama panjang dari mesin menjadi singkatan sesuai kemauanmu
+        # =================================================================
+        name_corrections = {
+            "Doni Eka Satria": "Doni Eka",
+            "Maikel Renato Syafaruddin": "Maikel R",
+            "Hamzah M. Ali Gani": "Hamzah M Ali Gani",
+            "Aditya Sugiantoro Abbas": "Aditya Sugiantoro A",
+            "Muhamad Usman": "M.Usman",
+            "M Akbar D Patty": "M.Akbar Patty",
+            "Daniel Freski Wangka": "Daniel Freski W",
+            "Fandi M. Naser": "Fandi M Naser",
+            "Agung Fadjriansyah Ano": "Agung F",
+            "Deni Hendri Bobode": "Deni Hendri",
+            "Muhammad Rifai": "M Rifai",
+            "Idrus Arsad, SH": "Idrus Arsad"
+        }
+        df[AppConstants.COL_PERSON_NAME] = df[AppConstants.COL_PERSON_NAME].replace(name_corrections)
 
         # ==========================================
         # 1. BUANG DATA YANG TIDAK PERLU
@@ -334,7 +357,6 @@ class AttendanceRepository(DataRepository):
         valid_employees = DivisionRegistry.get_all_members()
         df = df[df[AppConstants.COL_PERSON_NAME].isin(valid_employees)].copy()
 
-        # JIKA SETELAH DIFILTER TERNYATA KOSONG, KEMBALIKAN SCHEMA KOSONG
         if df.empty:
             return empty_schema
 
@@ -343,7 +365,6 @@ class AttendanceRepository(DataRepository):
         # ==========================================
         date_columns = [col for col in df.columns if col != AppConstants.COL_PERSON_NAME]
         
-        # Jaga-jaga kalau di sheet belum ada kolom tanggal sama sekali
         if not date_columns:
             return empty_schema
         
@@ -372,7 +393,7 @@ class AttendanceRepository(DataRepository):
             
             for punch in all_punches:
                 punch = punch.strip()
-                if punch and punch != '-':
+                if punch and punch != '-' and punch != '-,-':
                     event_time_str = f"{tgl} {punch}:00"
                     expanded_data.append({
                         AppConstants.COL_PERSON_NAME: nama,
@@ -384,18 +405,15 @@ class AttendanceRepository(DataRepository):
         # ==========================================
         new_df = pd.DataFrame(expanded_data)
         
-        # JIKA TIDAK ADA JAM ABSEN YANG VALID, KEMBALIKAN SCHEMA KOSONG
         if new_df.empty: 
             return empty_schema
 
         new_df[AppConstants.COL_EVENT_TIME] = pd.to_datetime(new_df[AppConstants.COL_EVENT_TIME], errors='coerce')
         new_df = new_df.dropna(subset=[AppConstants.COL_EVENT_TIME])
         
-        # Sekali lagi memastikan tidak kosong setelah tanggal diubah format
         if new_df.empty:
             return empty_schema
         
-        # Ekstrak waktu
         new_df['Tanggal'] = new_df[AppConstants.COL_EVENT_TIME].dt.date
         new_df['Waktu'] = new_df[AppConstants.COL_EVENT_TIME].dt.time
         new_df['Jam'] = new_df[AppConstants.COL_EVENT_TIME].dt.hour
@@ -3049,6 +3067,7 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 
 
 
