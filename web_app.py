@@ -213,11 +213,9 @@ class DivisionRegistry:
 
 
 # Initialize Division Registry with actual data
-# Initialize Division Registry with actual data
 def initialize_divisions():
     """
     Initialize all division configurations with CUSTOM SORT ORDER defined by User.
-    Updated to follow exact user sort order and Spreadsheet naming conventions.
     """
     divisions_data = [
         DivisionConfig("SPT & SPV", "#FFD700", "👨‍✈️", "SPT & SPV", description="SPT & SPV", priority=1, 
@@ -250,7 +248,7 @@ def initialize_divisions():
         DivisionConfig("HELICOPTER", "#6c5ce7", "🚁", "HEL", description="Helicopter Operations", priority=10, 
                        members=["Agung Sabar Santoso Taufik", "Farok Abdul", "Yus Andi"]),
         
-        DivisionConfig("GROUND HANDLING OPS", "#e17055", "🚜", "GND", description="Ground Handling Support", priority=11, 
+        DivisionConfig("GROUND HANDLING OPS", "#e17055", "🚜", "GND2", description="Ground Handling Support", priority=11, 
                        members=["Achmad Rizky Ariz", "Recky Irwan R. A Arsyad", "Muh. Noval Kipudjena", "Albert Papuling", "Eko", "Rizki Wally"]),
         
         DivisionConfig("AMC & TERMINAL", "#0984e3", "🏢", "AMC", description="Airport Movement Control & Terminal", priority=12, 
@@ -260,7 +258,7 @@ def initialize_divisions():
                        members=["Hildan Ahmad Zaelani", "Abdurahim Andar"]),
         
         DivisionConfig("PKP-PK", "#fab1a0", "🚒", "RES", description="Fire & Rescue Services", priority=14, 
-                       members=["Andreas Aritonang", "Achmad Alwan Asyhab", "Doni Eka Satria", "Bayu Mustaqim Wicaksono", "Yogi Prasetya Eka Winandra", "Akhsin Aditya Weza Putra", "Fardhan Ahmad Tajali", "Maikel Renato Syafaruddin", "Saldi Sandra", "Hamzah M. Ali Gani", "Marfan Mandar", "Julham Keya", "Aditya Sugiantoro Abbas", "Muhamad Usman", "M Akbar D Patty", "Daniel Freski Wangka", "Fandi M. Naser", "Agung Fadjriansyah Ano", "Deni Hendri Bobode", "Muhammad Rifai", "Idrus Arsad, SH"])
+                       members=["Andreas Aritonang", "Achmad Alwan Asyhab", "Doni Eka", "Bayu Mustaqim Wicaksono", "Yogi Prasetya Eka Winandra", "Akhsin Aditya Weza Putra", "Fardhan Ahmad Tajali", "Maikel R", "Saldi Sandra", "Hamzah M Ali Gani", "Marfan Mandar", "Julham Keya", "Aditya Sugiantoro A", "M.Usman", "M.Akbar Patty", "Daniel Freski W", "Fandi M Naser", "Agung F", "Deni Hendri", "M Rifai", "Idrus Arsad"])
     ]
     for division in divisions_data:
         DivisionRegistry.register(division)
@@ -3051,6 +3049,7 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 
 
 
