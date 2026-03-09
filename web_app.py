@@ -213,9 +213,11 @@ class DivisionRegistry:
 
 
 # Initialize Division Registry with actual data
+# Initialize Division Registry with actual data
 def initialize_divisions():
     """
     Initialize all division configurations with CUSTOM SORT ORDER defined by User.
+    Updated to follow exact user sort order and Spreadsheet naming conventions.
     """
     divisions_data = [
         DivisionConfig("SPT & SPV", "#FFD700", "👨‍✈️", "SPT & SPV", description="SPT & SPV", priority=1, 
@@ -228,7 +230,7 @@ def initialize_divisions():
                        members=["Venesia Aprilia Ineke", "Muhammad Naufal Ramadhan", "Yuzak Gerson Puturuhu", "Muhamad Alief Wildan", "Gafur Hamisi", "Jul Akbar M. Nur", "Adrianto Laundang"]),
         
         DivisionConfig("TRANS APRON", "#e1b12c", "🚌", "APR", description="Trans Apron", priority=4, 
-                       members=["Ilham Rahim", "Dwiki Agus Saputro", "Moh. Sofyan", "Faisal M. Kadir", "Amirudin Rustam", "Faturrahman Kaunar", "Wawan Hermawan", "Rahmat Joni", "Nur Ichsan"]),
+                       members=["Ilham Rahim", "Dwiki Agus Saputro", "Moh. Sofyan", "Faisal M. Kadir", "Amirudin Rustam", "Faturrahman Kaunar", "Wawan Hermawan", "Rahmat Joni", "Nur Ichsan", "Wisbenth Tangguh Wicaksono"]),
         
         DivisionConfig("ATS", "#44bd32", "📡", "ATS", description="Air Traffic Services", priority=5, 
                        members=["Nurultanti", "Firlon Paembong", "Irwan Rezky Setiawan", "Yusuf Arviansyah", "Alvon Samuel Sinaga", "Nurdahlia Is. Folaimam", "Ghaly Rabbani Panji Indra", "Ikhsan Wahyu Vebriyan", "Rizki Mahardhika Ardi Tigo", "Nikolaus Vincent Quirino"]),
@@ -246,15 +248,18 @@ def initialize_divisions():
                        members=["Yuda Saputra.", "Tesalonika Gratia Putri Toar", "Esi Setia Ningseh", "Ardiyanto Kalatjo", "Febrianti Tikabala"]),
         
         DivisionConfig("HELICOPTER", "#6c5ce7", "🚁", "HEL", description="Helicopter Operations", priority=10, 
-                       members=["Agung Sabar Santoso Taufik", "Farok Abdul", "Yus Andi", "Achmad Rizky Ariz", "Recky Irwan R. A Arsyad", "Muh. Noval Kipudjena"]),
+                       members=["Agung Sabar Santoso Taufik", "Farok Abdul", "Yus Andi"]),
         
-        DivisionConfig("AMC & TERMINAL", "#0984e3", "🏢", "AMC", description="Airport Movement Control & Terminal", priority=11, 
-                       members=["Albert Papuling", "Eko", "Rizki Wally", "Muhammad Tunjung Rohmatullah", "Risky Sulung", "Muchamad Nur Syaifulrahman", "Sarni Massiri", "Gibhran Fitransyah Yusri", "Muhdi R Tomia", "Riski Rifaldo Theofilus Anu", "Sunarty Fakir", "Wisbenth Tangguh Wicaksono"]),
+        DivisionConfig("GROUND HANDLING OPS", "#e17055", "🚜", "GND", description="Ground Handling Support", priority=11, 
+                       members=["Achmad Rizky Ariz", "Recky Irwan R. A Arsyad", "Muh. Noval Kipudjena", "Albert Papuling", "Eko", "Rizki Wally"]),
         
-        DivisionConfig("SAFETY OFFICER", "#fd79a8", "🦺", "SFT", description="Safety Operations", priority=12, 
+        DivisionConfig("AMC & TERMINAL", "#0984e3", "🏢", "AMC", description="Airport Movement Control & Terminal", priority=12, 
+                       members=["Muhammad Tunjung Rohmatullah", "Risky Sulung", "Muchamad Nur Syaifulrahman", "Sarni Massiri", "Gibhran Fitransyah Yusri", "Muhdi R Tomia", "Riski Rifaldo Theofilus Anu", "Sunarty Fakir"]),
+        
+        DivisionConfig("SAFETY OFFICER", "#fd79a8", "🦺", "SFT", description="Safety Operations", priority=13, 
                        members=["Hildan Ahmad Zaelani", "Abdurahim Andar"]),
         
-        DivisionConfig("PKP-PK", "#fab1a0", "🚒", "RES", description="Fire & Rescue Services", priority=13, 
+        DivisionConfig("PKP-PK", "#fab1a0", "🚒", "RES", description="Fire & Rescue Services", priority=14, 
                        members=["Andreas Aritonang", "Achmad Alwan Asyhab", "Doni Eka Satria", "Bayu Mustaqim Wicaksono", "Yogi Prasetya Eka Winandra", "Akhsin Aditya Weza Putra", "Fardhan Ahmad Tajali", "Maikel Renato Syafaruddin", "Saldi Sandra", "Hamzah M. Ali Gani", "Marfan Mandar", "Julham Keya", "Aditya Sugiantoro Abbas", "Muhamad Usman", "M Akbar D Patty", "Daniel Freski Wangka", "Fandi M. Naser", "Agung Fadjriansyah Ano", "Deni Hendri Bobode", "Muhammad Rifai", "Idrus Arsad, SH"])
     ]
     for division in divisions_data:
@@ -3046,6 +3051,7 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 
 
 
