@@ -148,14 +148,10 @@ class DivisionConfig:
 
 
 class DataSourceConfig:
-    """
-    Configuration for external data sources.
-    Centralizes all external URLs and connection parameters.
-    """
+    # GANTI YANG INI DENGAN LINK BARU:
+    ATTENDANCE_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_GhoIb1riX98FsP8W4f2-_dH_PLcLDZskjNOyDcnnvOhBg8FUp3xJ-c_YgV0Pw71k4STy4rR0_MS5/pub?gid=1877240181&single=true&output=csv"
     
-    # Google Sheets Data Sources
-    ATTENDANCE_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_GhoIb1riX98FsP8W4f2-_dH_PLcLDZskjNOyDcnnvOhBg8FUp3xJ-c_YgV0Pw71k4STy4rR0_MS5/pub?output=csv"
-    
+    # YANG INI BIARKAN SAJA:
     STATUS_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ2QrBN8uTRiHINCEcZBrbdU-gzJ4pN2UljoqYG6NMoUQIK02yj_D1EdlxdPr82Pbr94v2o6V0Vh3Kt/pub?gid=511860805&single=true&output=csv"
     
     # Google Forms
@@ -3050,6 +3046,7 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 
 
 
