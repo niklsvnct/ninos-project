@@ -249,13 +249,13 @@ def initialize_divisions():
                        members=["Agung Sabar Santoso Taufik", "Farok Abdul", "Yus Andi", "Achmad Rizky Ariz", "Recky Irwan R. A Arsyad", "Muh. Noval Kipudjena"]),
         
         DivisionConfig("AMC & TERMINAL", "#0984e3", "🏢", "AMC", description="Airport Movement Control & Terminal", priority=11, 
-                       members=["Albert Papuling", "Eko", "Rizki Wally", "Muhammad Tunjung Rohmatullah", "Risky Sulung", "Muchamad Nur Syaifulrahman", "Sarni Massiri", "Gibhran Fitransyah Yusri", "Muhdi R Tomia", "Riski Rifaldo Theofilus Anu", "Sunarty Fakir"]),
+                       members=["Albert Papuling", "Eko", "Rizki Wally", "Muhammad Tunjung Rohmatullah", "Risky Sulung", "Muchamad Nur Syaifulrahman", "Sarni Massiri", "Gibhran Fitransyah Yusri", "Muhdi R Tomia", "Riski Rifaldo Theofilus Anu", "Sunarty Fakir", "Wisbenth Tangguh Wicaksono"]),
         
         DivisionConfig("SAFETY OFFICER", "#fd79a8", "🦺", "SFT", description="Safety Operations", priority=12, 
                        members=["Hildan Ahmad Zaelani", "Abdurahim Andar"]),
         
         DivisionConfig("PKP-PK", "#fab1a0", "🚒", "RES", description="Fire & Rescue Services", priority=13, 
-                       members=["Andreas Aritonang", "Achmad Alwan Asyhab", "Doni Eka", "Bayu Mustaqim Wicaksono", "Yogi Prasetya Eka Winandra", "Akhsin Aditya Weza Putra", "Fardhan Ahmad Tajali", "Maikel R", "Saldi Sandra", "Hamzah M Ali Gani", "Marfan Mandar", "Julham Keya", "Aditya Sugiantoro A", "M.Usman", "M.Akbar Patty", "Daniel Freski W", "Fandi M Naser", "Agung F", "Deni Hendri", "M Rifai", "Idrus Arsad"])
+                       members=["Andreas Aritonang", "Achmad Alwan Asyhab", "Doni Eka Satria", "Bayu Mustaqim Wicaksono", "Yogi Prasetya Eka Winandra", "Akhsin Aditya Weza Putra", "Fardhan Ahmad Tajali", "Maikel Renato Syafaruddin", "Saldi Sandra", "Hamzah M. Ali Gani", "Marfan Mandar", "Julham Keya", "Aditya Sugiantoro Abbas", "Muhamad Usman", "M Akbar D Patty", "Daniel Freski Wangka", "Fandi M. Naser", "Agung Fadjriansyah Ano", "Deni Hendri Bobode", "Muhammad Rifai", "Idrus Arsad, SH"])
     ]
     for division in divisions_data:
         DivisionRegistry.register(division)
@@ -3046,6 +3046,7 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 
 
 
