@@ -304,11 +304,11 @@ class AttendanceRepository(DataRepository):
     @st.cache_data(ttl=AppConstants.CACHE_TTL_SECONDS)
     def fetch(_self) -> Optional[pd.DataFrame]:
         try:
-            # Membaca data mentah dari Spreadsheet (Format menyamping)
+            # Membaca data mentah dari Spreadsheet
             df = pd.read_csv(_self.url)
             df.columns = df.columns.str.strip()
             
-            # Standarisasi judul kolom "Nama" agar dikenali sistem
+            # Standarisasi judul kolom "Nama"
             if 'Nama' in df.columns:
                 df = df.rename(columns={'Nama': AppConstants.COL_PERSON_NAME})
                 
@@ -318,33 +318,36 @@ class AttendanceRepository(DataRepository):
             return None
 
     def validate(self, df: pd.DataFrame) -> bool:
-        # Validasi: Cukup pastikan ada kolom Nama di Spreadsheet
         return AppConstants.COL_PERSON_NAME in df.columns
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Sihir Otomatisasi: Mengubah tabel menyamping menjadi tabel ke bawah
-        seperti format sistem lama.
-        """
         # ==========================================
-        # 1. BUANG 29.000+ DATA YANG TIDAK PERLU
+        # 0. PENYELAMAT JIKA DATA KOSONG (FALLBACK SCHEMA)
         # ==========================================
-        # Ambil 101 nama valid dari DivisionRegistry di atas
+        empty_schema = pd.DataFrame(columns=[
+            AppConstants.COL_PERSON_NAME, AppConstants.COL_EVENT_TIME, 
+            'Tanggal', 'Waktu', 'Jam', 'Menit', 'Hari'
+        ])
+
+        # ==========================================
+        # 1. BUANG DATA YANG TIDAK PERLU
+        # ==========================================
         valid_employees = DivisionRegistry.get_all_members()
-        # Sisakan hanya data yang namanya ada di daftar 101 orang tersebut
         df = df[df[AppConstants.COL_PERSON_NAME].isin(valid_employees)].copy()
 
+        # JIKA SETELAH DIFILTER TERNYATA KOSONG, KEMBALIKAN SCHEMA KOSONG
         if df.empty:
-            return pd.DataFrame()
+            return empty_schema
 
         # ==========================================
         # 2. PUTAR TABEL (UNPIVOT)
         # ==========================================
-        # Kita ambil semua judul kolom tanggal (misal: 2026-03-01, 2026-03-02, dst)
         date_columns = [col for col in df.columns if col != AppConstants.COL_PERSON_NAME]
         
-        # Fungsi 'melt' mengubah kolom tanggal yang tadinya di atas (menyamping)
-        # menjadi berjejer ke bawah (menjadi baris).
+        # Jaga-jaga kalau di sheet belum ada kolom tanggal sama sekali
+        if not date_columns:
+            return empty_schema
+        
         df_melted = pd.melt(
             df, 
             id_vars=[AppConstants.COL_PERSON_NAME], 
@@ -353,7 +356,6 @@ class AttendanceRepository(DataRepository):
             value_name='Jam_Raw'
         )
         
-        # Bersihkan jam yang kosong atau cuma berisi simbol "-" (tandanya hari libur/alpha)
         df_melted = df_melted.dropna(subset=['Jam_Raw'])
         df_melted = df_melted[df_melted['Jam_Raw'].astype(str).str.strip() != '']
         df_melted = df_melted[~df_melted['Jam_Raw'].astype(str).str.contains(r'^[-,\s]+$')]
@@ -364,19 +366,15 @@ class AttendanceRepository(DataRepository):
         expanded_data = []
         for _, row in df_melted.iterrows():
             nama = row[AppConstants.COL_PERSON_NAME]
-            tgl = row['Tanggal_Absen'] # Nilainya "2026-03-01"
+            tgl = row['Tanggal_Absen']
             
-            # Ganti enter (\n) dengan koma, lalu pecah jamnya (dari "06:20,12:05" jadi 2 item)
             raw_text = str(row['Jam_Raw']).replace('\n', ',').replace('\r', ',')
             all_punches = raw_text.split(',')
             
             for punch in all_punches:
                 punch = punch.strip()
                 if punch and punch != '-':
-                    # Gabungkan tanggal dan jam, tambahkan detik ":00" agar formatnya lengkap
                     event_time_str = f"{tgl} {punch}:00"
-                    
-                    # Simpan data ini sebagai 1 baris rekaman absen mandiri
                     expanded_data.append({
                         AppConstants.COL_PERSON_NAME: nama,
                         AppConstants.COL_EVENT_TIME: event_time_str
@@ -386,13 +384,19 @@ class AttendanceRepository(DataRepository):
         # 4. KEMBALIKAN KE BENTUK ASLI WEBSITE
         # ==========================================
         new_df = pd.DataFrame(expanded_data)
-        if new_df.empty: return new_df
+        
+        # JIKA TIDAK ADA JAM ABSEN YANG VALID, KEMBALIKAN SCHEMA KOSONG
+        if new_df.empty: 
+            return empty_schema
 
-        # Ubah teks waktu menjadi objek Datetime Python yang asli
         new_df[AppConstants.COL_EVENT_TIME] = pd.to_datetime(new_df[AppConstants.COL_EVENT_TIME], errors='coerce')
         new_df = new_df.dropna(subset=[AppConstants.COL_EVENT_TIME])
         
-        # Ekstrak waktu agar fitur "Deteksi Shift 1 & 2" di kodingan bawahmu bisa tetap bekerja
+        # Sekali lagi memastikan tidak kosong setelah tanggal diubah format
+        if new_df.empty:
+            return empty_schema
+        
+        # Ekstrak waktu
         new_df['Tanggal'] = new_df[AppConstants.COL_EVENT_TIME].dt.date
         new_df['Waktu'] = new_df[AppConstants.COL_EVENT_TIME].dt.time
         new_df['Jam'] = new_df[AppConstants.COL_EVENT_TIME].dt.hour
@@ -3046,6 +3050,7 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 
 
 
