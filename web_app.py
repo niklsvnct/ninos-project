@@ -229,13 +229,13 @@ def initialize_divisions():
                        members=["M. Ansori", "Bayu Pratama Putra Katuwu", "Yoga Nugraha Putra Pasaribu", "Junaidi Taib", "Muhammad Rizal Amra", "Rusli Dj"]),
         
         DivisionConfig("TBL", "#0097e6", "📦", "TBL", description="Teknik Bangunan Dan Landasan", priority=3, 
-                       members=["Venesia Aprilia Ineke", "Muhammad Naufal Ramadhan", "Yuzak Gerson Puturuhu", "Muhamad Alief Wildan", "Gafur Hamisi", "Jul Akbar M. Nur", "Sarni Massiri", "Adrianto Laundang", "Wahyudi Ismail"]),
+                       members=["Venesia Aprilia Ineke", "Muhammad Naufal Ramadhan", "Yuzak Gerson Puturuhu", "Muhamad Alief Wildan", "Gafur Hamisi", "Jul Akbar M. Nur", "Adrianto Laundang"]),
         
         DivisionConfig("TRANS APRON", "#e1b12c", "🚌", "APR", description="Trans Apron", priority=4, 
-                       members=["Marichi Gita Rusdi", "Ilham Rahim", "Abdul Mu Iz Simal", "Dwiki Agus Saputro", "Moh. Sofyan", "Faisal M. Kadir", "Amirudin Rustam", "Faturrahman Kaunar", "Wawan Hermawan", "Rahmat Joni", "Nur Ichsan"]),
+                       members=["Ilham Rahim", "Dwiki Agus Saputro", "Moh. Sofyan", "Faisal M. Kadir", "Amirudin Rustam", "Faturrahman Kaunar", "Wawan Hermawan", "Rahmat Joni", "Nur Ichsan"]),
         
         DivisionConfig("ATS", "#44bd32", "📡", "ATS", description="Air Traffic Services", priority=5, 
-                       members=["Nurul Tanti", "Firlon Paembong", "Irwan Rezky Setiawan", "Yusuf Arviansyah", "Nurdahlia Is. Folaimam", "Ghaly Rabbani Panji Indra", "Ikhsan Wahyu Vebriyan", "Rizki Mahardhika Ardi Tigo", "Nikolaus Vincent Quirino"]),
+                       members=["Nurultanti", "Firlon Paembong", "Irwan Rezky Setiawan", "Yusuf Arviansyah", "Alvon Samuel Sinaga", "Nurdahlia Is. Folaimam", "Ghaly Rabbani Panji Indra", "Ikhsan Wahyu Vebriyan", "Rizki Mahardhika Ardi Tigo", "Nikolaus Vincent Quirino"]),
         
         DivisionConfig("ADM COMPLIANCE", "#8c7ae6", "📋", "ADM", description="Administration & Compliance", priority=6, 
                        members=["Yessicha Aprilyona Siregar", "Gabriela Margrith Louisa Klavert", "Aldi Saptono"]),
@@ -247,19 +247,19 @@ def initialize_divisions():
                        members=["Andrian Maranatha", "Toni Nugroho Simarmata", "Muhamad Albi Ferano", "Andreas Charol Tandjung", "Sabadia Mahmud", "Rusdin Malagapi", "Muhamad Judhytia Winli", "Wahyu Samsudin", "Fientje Elisabeth Joseph", "Anglie Fitria Desiana Mamengko", "Dwi Purnama Bimasakti", "Windi Angriani Sulaeman", "Megawati A. Rauf"]),
         
         DivisionConfig("GROUND HANDLING", "#e17055", "🚜", "GND", description="Ground Handling Operations", priority=9, 
-                       members=["Yuda Saputra", "Tesalonika Gratia Putri Toar", "Esi Setia Ningseh", "Ardiyanto Kalatjo", "Febrianti Tikabala"]),
+                       members=["Yuda Saputra.", "Tesalonika Gratia Putri Toar", "Esi Setia Ningseh", "Ardiyanto Kalatjo", "Febrianti Tikabala"]),
         
         DivisionConfig("HELICOPTER", "#6c5ce7", "🚁", "HEL", description="Helicopter Operations", priority=10, 
-                       members=["Agung Sabar S. Taufik", "Recky Irwan R. A Arsyad", "Farok Abdul", "Achmad Rizky Ariz", "Yus Andi", "Muh. Noval Kipudjena"]),
+                       members=["Agung Sabar Santoso Taufik", "Farok Abdul", "Yus Andi", "Achmad Rizky Ariz", "Recky Irwan R. A Arsyad", "Muh. Noval Kipudjena"]),
         
         DivisionConfig("AMC & TERMINAL", "#0984e3", "🏢", "AMC", description="Airport Movement Control & Terminal", priority=11, 
-                       members=["Risky Sulung", "Muchamad Nur Syaifulrahman", "Muhammad Tunjung Rohmatullah", "Sunarty Fakir", "Albert Papuling", "Gibhran Fitransyah Yusri", "Muhdi R Tomia", "Riski Rifaldo Theofilus Anu", "Eko"]),
+                       members=["Albert Papuling", "Eko", "Rizki Wally", "Muhammad Tunjung Rohmatullah", "Risky Sulung", "Muchamad Nur Syaifulrahman", "Sarni Massiri", "Gibhran Fitransyah Yusri", "Muhdi R Tomia", "Riski Rifaldo Theofilus Anu", "Sunarty Fakir"]),
         
         DivisionConfig("SAFETY OFFICER", "#fd79a8", "🦺", "SFT", description="Safety Operations", priority=12, 
                        members=["Hildan Ahmad Zaelani", "Abdurahim Andar"]),
         
         DivisionConfig("PKP-PK", "#fab1a0", "🚒", "RES", description="Fire & Rescue Services", priority=13, 
-                       members=["Andreas Aritonang", "Achmad Alwan Asyhab", "Doni Eka Satria", "Yogi Prasetya Eka Winandra", "Akhsin Aditya Weza Putra", "Fardhan Ahmad Tajali", "Maikel Renato Syafaruddin", "Saldi Sandra", "Hamzah M. Ali Gani", "Marfan Mandar", "Julham Keya", "Aditya Sugiantoro Abbas", "Muhamad Usman", "M Akbar D Patty", "Daniel Freski Wangka", "Fandi M.Naser", "Agung Fadjriansyah Ano", "Deni Hendri Bobode", "Muhammad Rifai", "Idrus Arsad, SH"])
+                       members=["Andreas Aritonang", "Achmad Alwan Asyhab", "Doni Eka", "Bayu Mustaqim Wicaksono", "Yogi Prasetya Eka Winandra", "Akhsin Aditya Weza Putra", "Fardhan Ahmad Tajali", "Maikel R", "Saldi Sandra", "Hamzah M Ali Gani", "Marfan Mandar", "Julham Keya", "Aditya Sugiantoro A", "M.Usman", "M.Akbar Patty", "Daniel Freski W", "Fandi M Naser", "Agung F", "Deni Hendri", "M Rifai", "Idrus Arsad"])
     ]
     for division in divisions_data:
         DivisionRegistry.register(division)
@@ -293,7 +293,7 @@ class DataRepository(ABC):
 class AttendanceRepository(DataRepository):
     """
     Repository for attendance data management.
-    Handles data fetching, validation, and transformation.
+    Handles data fetching, validation, and transformation from Pivot to Flat format.
     """
     
     def __init__(self, url: str):
@@ -303,62 +303,103 @@ class AttendanceRepository(DataRepository):
     
     @st.cache_data(ttl=AppConstants.CACHE_TTL_SECONDS)
     def fetch(_self) -> Optional[pd.DataFrame]:
-        """
-        Fetch attendance data from Google Sheets.
-        Uses Streamlit caching for performance optimization.
-        """
         try:
+            # Membaca data mentah dari Spreadsheet (Format menyamping)
             df = pd.read_csv(_self.url)
-            
-            # Standardize column names
             df.columns = df.columns.str.strip()
             
-            if not _self.validate(df):
-                st.error("❌ Attendance data validation failed")
-                return None
-            
+            # Standarisasi judul kolom "Nama" agar dikenali sistem
+            if 'Nama' in df.columns:
+                df = df.rename(columns={'Nama': AppConstants.COL_PERSON_NAME})
+                
             return _self.transform(df)
-            
         except Exception as e:
-            st.error(f"❌ Failed to fetch attendance data: {str(e)}")
+            st.error(f"❌ Error saat mengambil data: {str(e)}")
             return None
-    
+
     def validate(self, df: pd.DataFrame) -> bool:
-        """Validate that required columns exist."""
-        required_columns = [AppConstants.COL_PERSON_NAME, AppConstants.COL_EVENT_TIME]
-        return all(col in df.columns for col in required_columns)
-    
+        # Validasi: Cukup pastikan ada kolom Nama di Spreadsheet
+        return AppConstants.COL_PERSON_NAME in df.columns
+
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        Transform raw attendance data.
-        Applies cleaning, type conversion, and feature engineering.
+        Sihir Otomatisasi: Mengubah tabel menyamping menjadi tabel ke bawah
+        seperti format sistem lama.
         """
-        # Clean employee names
-        df[AppConstants.COL_PERSON_NAME] = (
-            df[AppConstants.COL_PERSON_NAME]
-            .astype(str)
-            .str.strip()
+        # ==========================================
+        # 1. BUANG 29.000+ DATA YANG TIDAK PERLU
+        # ==========================================
+        # Ambil 101 nama valid dari DivisionRegistry di atas
+        valid_employees = DivisionRegistry.get_all_members()
+        # Sisakan hanya data yang namanya ada di daftar 101 orang tersebut
+        df = df[df[AppConstants.COL_PERSON_NAME].isin(valid_employees)].copy()
+
+        if df.empty:
+            return pd.DataFrame()
+
+        # ==========================================
+        # 2. PUTAR TABEL (UNPIVOT)
+        # ==========================================
+        # Kita ambil semua judul kolom tanggal (misal: 2026-03-01, 2026-03-02, dst)
+        date_columns = [col for col in df.columns if col != AppConstants.COL_PERSON_NAME]
+        
+        # Fungsi 'melt' mengubah kolom tanggal yang tadinya di atas (menyamping)
+        # menjadi berjejer ke bawah (menjadi baris).
+        df_melted = pd.melt(
+            df, 
+            id_vars=[AppConstants.COL_PERSON_NAME], 
+            value_vars=date_columns,
+            var_name='Tanggal_Absen', 
+            value_name='Jam_Raw'
         )
         
-        # Remove empty records
-        df = df[df[AppConstants.COL_PERSON_NAME] != ''].copy()
+        # Bersihkan jam yang kosong atau cuma berisi simbol "-" (tandanya hari libur/alpha)
+        df_melted = df_melted.dropna(subset=['Jam_Raw'])
+        df_melted = df_melted[df_melted['Jam_Raw'].astype(str).str.strip() != '']
+        df_melted = df_melted[~df_melted['Jam_Raw'].astype(str).str.contains(r'^[-,\s]+$')]
+
+        # ==========================================
+        # 3. PECAH JAM YANG NUMPUK
+        # ==========================================
+        expanded_data = []
+        for _, row in df_melted.iterrows():
+            nama = row[AppConstants.COL_PERSON_NAME]
+            tgl = row['Tanggal_Absen'] # Nilainya "2026-03-01"
+            
+            # Ganti enter (\n) dengan koma, lalu pecah jamnya (dari "06:20,12:05" jadi 2 item)
+            raw_text = str(row['Jam_Raw']).replace('\n', ',').replace('\r', ',')
+            all_punches = raw_text.split(',')
+            
+            for punch in all_punches:
+                punch = punch.strip()
+                if punch and punch != '-':
+                    # Gabungkan tanggal dan jam, tambahkan detik ":00" agar formatnya lengkap
+                    event_time_str = f"{tgl} {punch}:00"
+                    
+                    # Simpan data ini sebagai 1 baris rekaman absen mandiri
+                    expanded_data.append({
+                        AppConstants.COL_PERSON_NAME: nama,
+                        AppConstants.COL_EVENT_TIME: event_time_str
+                    })
         
-        # Parse timestamps
-        df[AppConstants.COL_EVENT_TIME] = pd.to_datetime(
-            df[AppConstants.COL_EVENT_TIME],
-            errors='coerce'
-        )
+        # ==========================================
+        # 4. KEMBALIKAN KE BENTUK ASLI WEBSITE
+        # ==========================================
+        new_df = pd.DataFrame(expanded_data)
+        if new_df.empty: return new_df
+
+        # Ubah teks waktu menjadi objek Datetime Python yang asli
+        new_df[AppConstants.COL_EVENT_TIME] = pd.to_datetime(new_df[AppConstants.COL_EVENT_TIME], errors='coerce')
+        new_df = new_df.dropna(subset=[AppConstants.COL_EVENT_TIME])
         
-        # Extract date and time components
-        df['Tanggal'] = df[AppConstants.COL_EVENT_TIME].dt.date
-        df['Waktu'] = df[AppConstants.COL_EVENT_TIME].dt.time
-        df['Jam'] = df[AppConstants.COL_EVENT_TIME].dt.hour
-        df['Menit'] = df[AppConstants.COL_EVENT_TIME].dt.minute
+        # Ekstrak waktu agar fitur "Deteksi Shift 1 & 2" di kodingan bawahmu bisa tetap bekerja
+        new_df['Tanggal'] = new_df[AppConstants.COL_EVENT_TIME].dt.date
+        new_df['Waktu'] = new_df[AppConstants.COL_EVENT_TIME].dt.time
+        new_df['Jam'] = new_df[AppConstants.COL_EVENT_TIME].dt.hour
+        new_df['Menit'] = new_df[AppConstants.COL_EVENT_TIME].dt.minute
+        new_df['Hari'] = new_df[AppConstants.COL_EVENT_TIME].dt.day_name()
         
-        # Add day of week
-        df['Hari'] = df[AppConstants.COL_EVENT_TIME].dt.day_name()
-        
-        return df
+        return new_df
 
 
 class StatusRepository(DataRepository):
@@ -3005,6 +3046,7 @@ def main() -> None:
 if __name__ == "__main__":
 
     main()
+
 
 
 
