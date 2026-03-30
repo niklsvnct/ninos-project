@@ -2180,12 +2180,10 @@ class AttendanceController:
             # Baru di-sort
             available_dates = sorted(clean_dates, reverse=True)
 
-            # PERBAIKAN: Geser 'if' ke KIRI agar lurus dengan 'available_dates' di atasnya
             if not available_dates:
                 st.error("No attendance data available")
                 st.stop()
             
-            # PERBAIKAN: Geser 'selected_date' ke KIRI agar lurus dengan 'available_dates'
             selected_date = st.date_input(
                 "📅 OPERATION DATE",
                 value=available_dates[0],
@@ -2314,17 +2312,71 @@ class AttendanceController:
         if st.session_state.get('show_analytics', False):
             with st.expander("📈 ADVANCED ANALYTICS", expanded=True):
                 self._render_analytics_view(df_final, status_dict, metrics, selected_date)
-    # === TARUH KODEMU DI SINI ===
+
     def _render_late_range_summary(self, default_end_date: date) -> None:
         """Render fitur rekap keterlambatan berdasarkan range waktu."""
         with st.expander("🔍 REKAP KETERLAMBATAN (RENTANG WAKTU)"):
             st.markdown("Pilih rentang waktu untuk melihat semua data personel yang terlambat.")
-            # ... (semua kode yang kamu copy tadi) ...
-            # ... (sampai bagian st.success) ...
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                # Default start date diset h-7
+                start_date = st.date_input("Dari Tanggal", value=default_end_date - timedelta(days=7), key="late_start")
+            with col2:
+                end_date = st.date_input("Sampai Tanggal", value=default_end_date, key="late_end")
+
+            if st.button("📊 Tampilkan Rekap Terlambat", use_container_width=True):
+                if start_date > end_date:
+                    st.error("Error: Tanggal Mulai harus sebelum Tanggal Akhir!")
+                else:
+                    with st.spinner(f"Mencari data keterlambatan dari {start_date.strftime('%d-%b-%Y')} hingga {end_date.strftime('%d-%b-%Y')}..."):
+                        late_records = []
+                        current_date = start_date
+                        
+                        # Loop dari start_date sampai end_date
+                        while current_date <= end_date:
+                            try:
+                                day_df, day_status = self.attendance_service.build_complete_report(current_date)
+                                if not day_df.empty:
+                                    metrics = self.attendance_service.calculate_metrics(day_df, day_status)
+                                    
+                                    # Kumpulkan yang telat saja
+                                    for name, time_val in metrics.get('late_list', []):
+                                        # Cari nama divisi
+                                        div_config = DivisionRegistry.find_by_member(name)
+                                        div_name = div_config.code if div_config else "UNK"
+                                        
+                                        late_records.append({
+                                            'Tanggal': current_date.strftime("%Y-%m-%d"),
+                                            'Nama Personel': name,
+                                            'Divisi': div_name,
+                                            'Jam Datang': time_val
+                                        })
+                            except Exception:
+                                pass # Lewati jika ada error di hari tersebut
+                                
+                            current_date += timedelta(days=1)
+                        
+                        if late_records:
+                            late_df = pd.DataFrame(late_records)
+                            # Urutkan berdasarkan Tanggal lalu Nama
+                            late_df = late_df.sort_values(by=['Tanggal', 'Nama Personel'])
+                            
+                            st.warning(f"⚠️ Ditemukan **{len(late_records)}** data keterlambatan pada rentang waktu ini.")
+                            st.dataframe(late_df, use_container_width=True, hide_index=True)
+                            
+                            # Tombol untuk download rekapnya
+                            csv = late_df.to_csv(index=False)
+                            st.download_button(
+                                "💾 DOWNLOAD REKAP CSV",
+                                data=csv,
+                                file_name=f"Rekap_Terlambat_{start_date}_{end_date}.csv",
+                                mime="text/csv",
+                                use_container_width=True
+                            )
                         else:
                             st.success("✅ Hebat! Tidak ada personel yang terlambat pada rentang waktu tersebut.")
 
-    # === INI KODE LAMA YANG SUDAH ADA DI FILE KAMU ===
     def _render_table_view(self, df: pd.DataFrame, status_dict: Dict[str, str]) -> None:
         """Render table view of attendance."""
         st.markdown("### 📊 DETAILED ATTENDANCE TABLE")
@@ -3080,38 +3132,4 @@ def main() -> None:
 # ================================================================================
 
 if __name__ == "__main__":
-
     main()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
