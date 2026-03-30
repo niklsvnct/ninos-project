@@ -2221,6 +2221,11 @@ class AttendanceController:
         with st.container():
             self.component_renderer.render_anomaly_section(metrics)
         
+        # --- TAMBAHAN FITUR RANGE WAKTU ---
+        st.markdown("<br>", unsafe_allow_html=True)
+        self._render_late_range_summary(selected_date)
+        # ----------------------------------
+
         st.markdown("---")
         
         # 7. EXPORT & REPORTS SECTION
@@ -2309,7 +2314,17 @@ class AttendanceController:
         if st.session_state.get('show_analytics', False):
             with st.expander("📈 ADVANCED ANALYTICS", expanded=True):
                 self._render_analytics_view(df_final, status_dict, metrics, selected_date)
+    # === TARUH KODEMU DI SINI ===
+    def _render_late_range_summary(self, default_end_date: date) -> None:
+        """Render fitur rekap keterlambatan berdasarkan range waktu."""
+        with st.expander("🔍 REKAP KETERLAMBATAN (RENTANG WAKTU)"):
+            st.markdown("Pilih rentang waktu untuk melihat semua data personel yang terlambat.")
+            # ... (semua kode yang kamu copy tadi) ...
+            # ... (sampai bagian st.success) ...
+                        else:
+                            st.success("✅ Hebat! Tidak ada personel yang terlambat pada rentang waktu tersebut.")
 
+    # === INI KODE LAMA YANG SUDAH ADA DI FILE KAMU ===
     def _render_table_view(self, df: pd.DataFrame, status_dict: Dict[str, str]) -> None:
         """Render table view of attendance."""
         st.markdown("### 📊 DETAILED ATTENDANCE TABLE")
