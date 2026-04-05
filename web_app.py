@@ -303,17 +303,12 @@ class AttendanceRepository(DataRepository):
     @st.cache_data(ttl=AppConstants.CACHE_TTL_SECONDS)
     def fetch(_self) -> Optional[pd.DataFrame]:
         try:
-            # Membaca data mentah dari Spreadsheet
-            df = pd.read_csv(_self.url)
-            df.columns = df.columns.str.strip()
-            
-            # Standarisasi judul kolom "Nama"
-            if 'Nama' in df.columns:
-                df = df.rename(columns={'Nama': AppConstants.COL_PERSON_NAME})
-                
+            # Ini yang bikin tahan banting kalau CSV-nya berantakan
+            df = pd.read_csv(_self.url, on_bad_lines='skip', engine='python')
+            df = df.rename(columns=lambda x: x.strip())
             return _self.transform(df)
         except Exception as e:
-            st.error(f"❌ Error saat mengambil data: {str(e)}")
+            st.warning(f"⚠️ Gagal fetch data status: {str(e)}")
             return None
 
     def validate(self, df: pd.DataFrame) -> bool:
@@ -454,52 +449,64 @@ class StatusRepository(DataRepository):
         return all(col in df.columns for col in required)
     
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Transform status data: Scan SEMUA kolom untuk mencari nama karyawan."""
+        """Transform status data: Scan SEMUA kolom dan pecah status+nama jika menyatu."""
         valid_employees = DivisionRegistry.get_all_members()
         expanded_data = []
 
         # Ambil nama kolom status dan tanggal dari konstanta
-        col_status = AppConstants.COL_STATUS
-        col_date = AppConstants.COL_DATE
+        col_status = AppConstants.COL_STATUS  # 'Keterangan'
+        col_date = AppConstants.COL_DATE      # 'Tanggal'
+
+        # Daftar kode status yang mungkin muncul nempel dengan nama
+        possible_codes = ['CR', 'SKD', 'OFF', 'IZIN', 'SAKIT', 'DL']
 
         for _, row in df.iterrows():
-            # Ambil nilai dasar (Status & Tanggal) di baris tersebut
-            current_status = str(row[col_status]).strip().upper() if col_status in df.columns else "UNKNOWN"
-            
-            # Proses Tanggal baris tersebut
-            raw_date = row[col_date] if col_date in df.columns else None
+            # 1. Parsing Tanggal
+            raw_date = row.get(col_date)
             processed_date = pd.to_datetime(raw_date, format='mixed', errors='coerce').date()
+            if pd.isna(processed_date): continue
 
-            # --- LOGIC SAKTI: SCAN SEMUA KOLOM ---
-            # Kita cek tiap sel di baris ini, apakah ada nama yang terdaftar di Registry?
-            for col_name in df.columns:
-                # Lewati kolom yang sudah pasti bukan kolom nama
-                if col_name in [col_status, col_date, 'Tanggal_Str']:
-                    continue
-                
-                cell_value = str(row[col_name]).strip()
-                
-                # Jika sel tidak kosong dan bukan 'nan'
-                if cell_value and cell_value.lower() != 'nan':
-                    # Pecah jika ada koma (untuk kasus nama dobel seperti Ghaly, Nikolaus)
-                    names_found = [n.strip() for n in cell_value.split(',')]
-                    
-                    for name in names_found:
-                        if name in valid_employees:
-                            # Masukkan ke list hasil scan
-                            expanded_data.append({
-                                AppConstants.COL_EMPLOYEE_NAME: name,
-                                AppConstants.COL_DATE: processed_date,
-                                AppConstants.COL_STATUS: current_status,
-                                'Tanggal_Str': processed_date.strftime(AppConstants.DATE_FORMAT) if processed_date else ""
-                            })
+            # 2. Ambil Keterangan (D)
+            raw_ket = str(row.get(col_status, "")).strip()
+            
+            # 3. Ambil Nama (C) - Bisa jadi kosong di kasus Form yang disubmit
+            raw_nama_col = str(row.get(AppConstants.COL_EMPLOYEE_NAME, "")).strip()
+            
+            # --- LOGIC SMART DETECTION ---
+            final_name = None
+            final_status = "UNKNOWN"
+
+            # A. Cek apakah Nama ada di kolom Nama Karyawan (C)
+            if raw_nama_col in valid_employees:
+                final_name = raw_nama_col
+                final_status = raw_ket.upper() if raw_ket else "UNKNOWN"
+            
+            # B. Jika Nama kosong, cari apakah namanya 'nyelip' di kolom Keterangan (D)
+            else:
+                for emp in valid_employees:
+                    if emp.lower() in raw_ket.lower():
+                        final_name = emp
+                        # Ekstrak kodenya (misal 'CR' dari 'CRYoga Nugraha...')
+                        for code in possible_codes:
+                            if raw_ket.upper().startswith(code):
+                                final_status = code
+                                break
+                        break
+            
+            # 4. Simpan ke dalam list jika nama ditemukan
+            if final_name:
+                expanded_data.append({
+                    AppConstants.COL_EMPLOYEE_NAME: final_name,
+                    AppConstants.COL_DATE: processed_date,
+                    AppConstants.COL_STATUS: final_status,
+                    'Tanggal_Str': processed_date.strftime(AppConstants.DATE_FORMAT)
+                })
 
         # Jika tidak ada data yang cocok sama sekali
         if not expanded_data:
             return pd.DataFrame(columns=[AppConstants.COL_EMPLOYEE_NAME, AppConstants.COL_DATE, AppConstants.COL_STATUS, 'Tanggal_Str'])
 
         return pd.DataFrame(expanded_data)
-
 
 # ================================================================================
 # SECTION 3: BUSINESS LOGIC LAYER (SERVICE CLASSES)
