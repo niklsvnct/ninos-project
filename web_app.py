@@ -242,7 +242,7 @@ def initialize_divisions():
         DivisionConfig("AVSEC", "#c23616", "🛡️", "SEC", description="Aviation Security", priority=8, 
                        members=["Andrian Maranatha", "Toni Nugroho Simarmata", "Muhamad Albi Ferano", "Andreas Charol Tandjung", "Sabadia Mahmud", "Rusdin Malagapi", "Muhamad Judhytia Winli", "Wahyu Samsudin", "Fientje Elisabeth Joseph", "Anglie Fitria Desiana Mamengko", "Dwi Purnama Bimasakti", "Windi Angriani Sulaeman", "Megawati A. Rauf"]),
         
-        DivisionConfig("GROUND HANDLING", "#e17055", "🚜", "GND", description="Ground Handling Operations", priority=9, 
+        DivisionConfig("Pasasi", "#e17055", "🚜", "GND", description="Ground Handling Operations", priority=9, 
                        members=["Yuda Saputra.", "Tesalonika Gratia Putri Toar", "Esi Setia Ningseh", "Ardiyanto Kalatjo", "Febrianti Tikabala"]),
         
         DivisionConfig("HELICOPTER", "#6c5ce7", "🚁", "HEL", description="Helicopter Operations", priority=10, 
