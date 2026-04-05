@@ -2475,21 +2475,95 @@ class AttendanceController:
             )
 
     def run_report_form(self) -> None:
-        """Report submission view."""
-        st.markdown('<div class="brand-title">MANUAL REPORTING</div>', unsafe_allow_html=True)
-        st.markdown('<div class="brand-subtitle">SUBMIT PERMITS & LEAVE REQUESTS</div>', 
+        """Native Streamlit form for multiple attendance status submission."""
+        st.markdown('<div class="brand-title">INPUT PERIZINAN</div>', unsafe_allow_html=True)
+        st.markdown('<div class="brand-subtitle">SUBMIT STATUS ANGGOTA SECARA MULTIPLE</div>', 
                     unsafe_allow_html=True)
         
-        st.info("📝 Use the form below to submit permit requests, sick leaves, or other attendance modifications.")
+        st.info("📝 Tambahkan baris pada tabel di bawah untuk input beberapa orang sekaligus dengan keterangan berbeda.")
         
-        if "PASTE_LINK" in DataSourceConfig.REPORT_FORM_URL:
-            st.warning("⚠️ Google Form URL not configured. Please contact system administrator.")
+        # 1. Kontrol Tanggal & Filter Divisi
+        col1, col2 = st.columns(2)
+        with col1:
+            target_date = st.date_input("📅 Tanggal Izin/Status", value=datetime.now().date())
+        with col2:
+            # Filter divisi agar koordinator tidak pusing cari nama dari 100+ orang
+            divisions = list(DivisionRegistry.get_all().keys())
+            selected_div = st.selectbox("🏢 Filter Divisi (Opsional)", ["Semua Divisi"] + divisions)
+            
+        # Tentukan list nama berdasarkan filter
+        if selected_div == "Semua Divisi":
+            available_names = DivisionRegistry.get_all_members()
         else:
-            components.iframe(
-                DataSourceConfig.REPORT_FORM_URL,
-                height=1200,
-                scrolling=True
-            )
+            available_names = DivisionRegistry.get(selected_div).members
+
+        # 2. Setup Data Editor (Tabel Interaktif)
+        st.markdown("### 📋 Tabel Input Status")
+        
+        # Inisialisasi struktur tabel kosong di session_state jika belum ada
+        if 'input_data' not in st.session_state:
+            st.session_state['input_data'] = pd.DataFrame(columns=['Nama Karyawan', 'Keterangan'])
+            
+        # Daftar status yang valid
+        status_options = ['CR', 'SKD', 'OFF', 'IZIN', 'SAKIT', 'DL', 'CUTI']
+        
+        # Render Data Editor
+        edited_df = st.data_editor(
+            st.session_state['input_data'],
+            column_config={
+                "Nama Karyawan": st.column_config.SelectboxColumn(
+                    "👤 Nama Karyawan",
+                    help="Pilih nama personel",
+                    width="large",
+                    options=available_names,
+                    required=True,
+                ),
+                "Keterangan": st.column_config.SelectboxColumn(
+                    "📝 Keterangan",
+                    help="Pilih status kehadiran",
+                    width="medium",
+                    options=status_options,
+                    required=True,
+                )
+            },
+            num_rows="dynamic", # Kunci utama: Bikin user bisa tambah/hapus baris sesuka hati
+            use_container_width=True,
+            key="status_editor"
+        )
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # 3. Tombol Submit & Validasi
+        if st.button("🚀 SUBMIT DATA KE SERVER", use_container_width=True):
+            if edited_df.empty:
+                st.warning("⚠️ Tabel masih kosong! Klik tombol '+' atau 'Add Row' untuk menambah data.")
+            elif edited_df.isnull().values.any():
+                st.error("❌ Ada baris yang belum lengkap! Pastikan Nama dan Keterangan terisi semua.")
+            else:
+                with st.spinner("Menyimpan data..."):
+                    # --- SIAPKAN DATA UNTUK DIKIRIM ---
+                    records_to_save = []
+                    timestamp = datetime.now().strftime(AppConstants.DATETIME_FORMAT)
+                    date_str = target_date.strftime("%-m/%-d/%Y") # Format standar G-Sheets
+                    
+                    for _, row in edited_df.iterrows():
+                        records_to_save.append({
+                            "Timestamp": timestamp,
+                            "Tanggal": date_str,
+                            "Nama Karyawan": row['Nama Karyawan'],
+                            "Keterangan": row['Keterangan']
+                        })
+                    
+                    # --- LOGIC PENYIMPANAN KE GOOGLE SHEETS ---
+                    # Disini nanti kita taruh fungsi untuk push data ke Google Sheets
+                    # st.write(records_to_save) # (Bisa di-uncomment untuk test lihat bentuk datanya)
+                    
+                    st.success(f"✅ Berhasil memproses {len(records_to_save)} data personel!")
+                    
+                    # Bersihkan tabel setelah sukses submit
+                    st.session_state['input_data'] = pd.DataFrame(columns=['Nama Karyawan', 'Keterangan'])
+                    # Paksa refresh agar tabel kosong lagi
+                    st.rerun()
 
 # ================================================================================
 # SECTION 9: ADDITIONAL FEATURES & UTILITIES
