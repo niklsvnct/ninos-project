@@ -455,20 +455,23 @@ class StatusRepository(DataRepository):
     
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Transform status data."""
-        # Clean names
-        df[AppConstants.COL_EMPLOYEE_NAME] = (
-            df[AppConstants.COL_EMPLOYEE_NAME]
-            .astype(str)
-            .str.strip()
-        )
+        # 1. Pastikan kolom nama adalah string
+        df[AppConstants.COL_EMPLOYEE_NAME] = df[AppConstants.COL_EMPLOYEE_NAME].astype(str).str.strip()
         
-        # Parse dates
+        # --- PERBAIKAN LOGIKA: PECAH NAMA JIKA ADA KOMA ---
+        # Ini supaya "Ghaly, Nikolaus" dibaca sebagai 2 orang yang berbeda
+        df[AppConstants.COL_EMPLOYEE_NAME] = df[AppConstants.COL_EMPLOYEE_NAME].str.split(',')
+        df = df.explode(AppConstants.COL_EMPLOYEE_NAME)
+        df[AppConstants.COL_EMPLOYEE_NAME] = df[AppConstants.COL_EMPLOYEE_NAME].str.strip()
+        # -------------------------------------------------
+        
+        # 2. Parse dates (Lanjutkan kode yang sudah ada)
         df[AppConstants.COL_DATE] = pd.to_datetime(
             df[AppConstants.COL_DATE],
             format='mixed',
             dayfirst=False,
             errors='coerce'
-        ).dt.date # Ensure date format consistency
+        ).dt.date
         
         df['Tanggal_Str'] = pd.to_datetime(df[AppConstants.COL_DATE]).dt.strftime(AppConstants.DATE_FORMAT)
         
