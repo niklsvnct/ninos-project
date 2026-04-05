@@ -454,36 +454,51 @@ class StatusRepository(DataRepository):
         return all(col in df.columns for col in required)
     
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Transform status data."""
-        # 1. Pastikan kolom nama adalah string
-        df[AppConstants.COL_EMPLOYEE_NAME] = df[AppConstants.COL_EMPLOYEE_NAME].astype(str).str.strip()
-        
-        # --- PERBAIKAN LOGIKA: PECAH NAMA JIKA ADA KOMA ---
-        # Ini supaya "Ghaly, Nikolaus" dibaca sebagai 2 orang yang berbeda
-        df[AppConstants.COL_EMPLOYEE_NAME] = df[AppConstants.COL_EMPLOYEE_NAME].str.split(',')
-        df = df.explode(AppConstants.COL_EMPLOYEE_NAME)
-        df[AppConstants.COL_EMPLOYEE_NAME] = df[AppConstants.COL_EMPLOYEE_NAME].str.strip()
-        # -------------------------------------------------
-        
-        # 2. Parse dates (Lanjutkan kode yang sudah ada)
-        df[AppConstants.COL_DATE] = pd.to_datetime(
-            df[AppConstants.COL_DATE],
-            format='mixed',
-            dayfirst=False,
-            errors='coerce'
-        ).dt.date
-        
-        df['Tanggal_Str'] = pd.to_datetime(df[AppConstants.COL_DATE]).dt.strftime(AppConstants.DATE_FORMAT)
-        
-        # Standardize status text
-        df[AppConstants.COL_STATUS] = (
-            df[AppConstants.COL_STATUS]
-            .astype(str)
-            .str.strip()
-            .str.upper()
-        )
-        
-        return df
+        """Transform status data: Scan SEMUA kolom untuk mencari nama karyawan."""
+        valid_employees = DivisionRegistry.get_all_members()
+        expanded_data = []
+
+        # Ambil nama kolom status dan tanggal dari konstanta
+        col_status = AppConstants.COL_STATUS
+        col_date = AppConstants.COL_DATE
+
+        for _, row in df.iterrows():
+            # Ambil nilai dasar (Status & Tanggal) di baris tersebut
+            current_status = str(row[col_status]).strip().upper() if col_status in df.columns else "UNKNOWN"
+            
+            # Proses Tanggal baris tersebut
+            raw_date = row[col_date] if col_date in df.columns else None
+            processed_date = pd.to_datetime(raw_date, format='mixed', errors='coerce').date()
+
+            # --- LOGIC SAKTI: SCAN SEMUA KOLOM ---
+            # Kita cek tiap sel di baris ini, apakah ada nama yang terdaftar di Registry?
+            for col_name in df.columns:
+                # Lewati kolom yang sudah pasti bukan kolom nama
+                if col_name in [col_status, col_date, 'Tanggal_Str']:
+                    continue
+                
+                cell_value = str(row[col_name]).strip()
+                
+                # Jika sel tidak kosong dan bukan 'nan'
+                if cell_value and cell_value.lower() != 'nan':
+                    # Pecah jika ada koma (untuk kasus nama dobel seperti Ghaly, Nikolaus)
+                    names_found = [n.strip() for n in cell_value.split(',')]
+                    
+                    for name in names_found:
+                        if name in valid_employees:
+                            # Masukkan ke list hasil scan
+                            expanded_data.append({
+                                AppConstants.COL_EMPLOYEE_NAME: name,
+                                AppConstants.COL_DATE: processed_date,
+                                AppConstants.COL_STATUS: current_status,
+                                'Tanggal_Str': processed_date.strftime(AppConstants.DATE_FORMAT) if processed_date else ""
+                            })
+
+        # Jika tidak ada data yang cocok sama sekali
+        if not expanded_data:
+            return pd.DataFrame(columns=[AppConstants.COL_EMPLOYEE_NAME, AppConstants.COL_DATE, AppConstants.COL_STATUS, 'Tanggal_Str'])
+
+        return pd.DataFrame(expanded_data)
 
 
 # ================================================================================
