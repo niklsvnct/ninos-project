@@ -615,128 +615,56 @@ class AttendanceService:
     def extract_time_ranges(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Extracts attendance into Pagi, Siang1, Siang2, Sore columns.
-        LOGIC FIX COMPLETE:
-        - Yoga (13:23) -> Masuk Siang 2 (Shift 1)
-        - Tesalonika (07:47) -> Masuk Pagi (Shift 2 - ON TIME)
-        - Sunarty (12:18) -> Masuk Siang 1 (Shift 1 - Pagi Kosong/Merah, BUKAN TELAT)
+        VERSION: Optimized & Cleaned (Fixed KeyError & Duplicates)
         """
         if df.empty: return pd.DataFrame()
 
-        df_clean = df.dropna(subset=[AppConstants.COL_PERSON_NAME, 'Tanggal'])
+        # 1. Bersihkan data & buat salinan
+        df_clean = df.dropna(subset=[AppConstants.COL_PERSON_NAME, 'Tanggal']).copy()
         if df_clean.empty: return pd.DataFrame()
 
-        # Konversi ke object time untuk perbandingan
+        # 2. Konversi ke object time untuk perbandingan logika
         df_clean['Waktu_Obj'] = pd.to_datetime(df_clean[AppConstants.COL_EVENT_TIME]).dt.time
-        # Tambahkan as_index=False agar kolom 'Tanggal' tidak hilang menjadi index
+        
+        # 3. Grouping dengan as_index=False agar 'Tanggal' tetap jadi kolom biasa
         grouped = df_clean.groupby([AppConstants.COL_PERSON_NAME, 'Tanggal'], as_index=False)
         
         def process_group(group):
             result = {'Pagi': '', 'Siang_1': '', 'Siang_2': '', 'Sore': ''}
             
-            # 1. Sortir waktu dari pagi ke malam
+            # Sortir waktu dari pagi ke malam
             sorted_group = group.sort_values(AppConstants.COL_EVENT_TIME)
             if sorted_group.empty: return pd.Series(result)
 
-            # 2. Ambil data kunci (Log Pertama & Log Terakhir)
+            # Ambil data kunci (Log Pertama & Log Terakhir)
             first_log = sorted_group.iloc[0]['Waktu_Obj']
             last_log = sorted_group.iloc[-1]['Waktu_Obj']
             
-            # 3. Cek Hari Jumat
-            # Mengambil tanggal dari index level 'Tanggal' karena kolomnya sudah pindah ke index
-            is_friday = sorted_group.index.get_level_values('Tanggal')[0].weekday() == 4
+            # Ambil Tanggal (Aman dari KeyError karena as_index=False)
+            is_friday = sorted_group['Tanggal'].iloc[0].weekday() == 4
             
             # --- LOGIKA PENENTUAN SHIFT ---
             is_shift_2 = False
-            
-            # Rule 1: Jika pulang lewat 19:00, fix Shift 2 (Tesalonika pulang 19:02)
-            batas_pulang_s1_toleransi = time(19, 0, 0)
-            
-            # Rule 2: Jika log pertama ada di jam nanggung Shift 2 (09:00 - 11:00)
-            range_masuk_s2_start = time(9, 0, 0)
-            range_masuk_s2_end = time(11, 0, 0)
-
-            if last_log > batas_pulang_s1_toleransi:
-                is_shift_2 = True
-            elif range_masuk_s2_start <= first_log <= range_masuk_s2_end:
+            # Rule: Pulang lewat jam 18:30 ATAU Datang di jam nanggung (09:00 - 11:30)
+            if last_log > time(18, 30, 0) or (time(9, 0, 0) <= first_log <= time(11, 30, 0)):
                 is_shift_2 = True
             
-            # --- SETTING RANGE WAKTU (PEMBAGIAN SLOT) ---
+            # --- SETTING RANGE SLOT WAKTU BERDASARKAN SHIFT ---
             if not is_shift_2:
-                # === SHIFT 1 ===
-                # Batas Pagi DIPERKETAT ke 11:00. 
-                # Jadi Sunarty (12:18) GAK BAKAL masuk Pagi.
-                limit_pagi_end = time(11, 0, 0) 
-                
-                # Range Siang 1 diperluas ke belakang biar nangkep Sunarty (12:18)
-                limit_siang_out_start = time(11, 1, 0) 
-                limit_siang_out_end    = time(12, 59, 59) 
-                
-                # Siang 2 (Masuk Istirahat)
-                limit_siang_in_start  = time(13, 0, 0)
-                limit_siang_in_end     = time(16, 0, 0) 
-                
-                # Sore
-                start_sore = time(16, 1, 0)
-                
-            else:
-                # === SHIFT 2 ===
-                # Pagi Shift 2 bisa datang jam 07:00 (Tesalonika 07:47 masuk sini)
-                # Tapi toleransi telatnya nanti dicek di TimeService (09:05)
-                limit_pagi_end = time(13, 0, 0) 
-                # ... (kode sebelumnya tetap sama) ...
-            
-            # --- SETTING RANGE WAKTU (PEMBAGIAN SLOT) ---
-            # --- SETTING RANGE WAKTU (PEMBAGIAN SLOT) ---
-            # --- SETTING RANGE WAKTU (PEMBAGIAN SLOT) ---
-            if not is_shift_2:
-                # ==========================================
-                # LOGIKA SHIFT 1 (PAGI)
-                # ==========================================
-                limit_pagi_end = time(11, 0, 0) 
-                
-                # KOLOM 1 (Keluar Istirahat): 12:00 - 12:59
-                # Buffer 11:30
-                limit_siang_out_start = time(11, 30, 0) 
-                limit_siang_out_end     = time(12, 59, 59) 
-                
-                # KOLOM 2 (Masuk Istirahat): 13:00 - 14:00
-                limit_siang_in_start   = time(13, 0, 0)
-                limit_siang_in_end      = time(14, 0, 0) 
-
-                # ATURAN PULANG SHIFT 1: Minimal Jam 17:00
+                # SHIFT 1 (07:00 - 17:00)
+                limit_pagi_end = time(11, 0, 0)
+                limit_siang_out_start, limit_siang_out_end = time(11, 30, 0), time(12, 59, 59)
+                limit_siang_in_start, limit_siang_in_end = time(13, 0, 0), time(14, 0, 0)
                 start_sore = time(17, 0, 0)
-                
             else:
-                # ==========================================
-                # LOGIKA SHIFT 2 (SIANG)
-                # ==========================================
-                limit_pagi_end = time(11, 0, 0)  
-                
+                # SHIFT 2 (09:00 - 19:00)
+                limit_pagi_end = time(11, 0, 0)
                 if is_friday:
-                    # --- KHUSUS HARI JUMAT SHIFT 2 ---
-                    # Istirahat: 12:00 - 14:00
-                    
-                    # Kolom 1 (Keluar): 11:30 - 12:59
-                    limit_siang_out_start = time(11, 30, 0) 
-                    limit_siang_out_end     = time(12, 59, 59)
-                    
-                    # Kolom 2 (Masuk): 13:00 - 14:00
-                    limit_siang_in_start   = time(13, 0, 0)
-                    limit_siang_in_end      = time(14, 0, 0) 
-                    
+                    limit_siang_out_start, limit_siang_out_end = time(11, 30, 0), time(12, 59, 59)
+                    limit_siang_in_start, limit_siang_in_end = time(13, 0, 0), time(14, 0, 0)
                 else:
-                    # --- HARI NORMAL SHIFT 2 (Senin-Kamis, Sabtu-Minggu) ---
-                    # Istirahat: 14:00 - 16:00
-                    
-                    # Kolom 1 (Keluar): 13:30 - 14:59
-                    limit_siang_out_start = time(13, 30, 0) 
-                    limit_siang_out_end     = time(14, 59, 59)
-                    
-                    # Kolom 2 (Masuk): 15:00 - 16:00
-                    limit_siang_in_start   = time(15, 0, 0)
-                    limit_siang_in_end      = time(16, 0, 0)
-
-                # ATURAN PULANG SHIFT 2: Minimal Jam 19:00 (Berlaku Tiap Hari)
+                    limit_siang_out_start, limit_siang_out_end = time(13, 30, 0), time(14, 59, 59)
+                    limit_siang_in_start, limit_siang_in_end = time(15, 0, 0), time(16, 0, 0)
                 start_sore = time(19, 0, 0)
 
             # --- MAPPING DATA KE KOLOM ---
@@ -744,30 +672,28 @@ class AttendanceService:
                 t = row['Waktu_Obj']
                 val_str = row[AppConstants.COL_EVENT_TIME].strftime(AppConstants.TIME_FORMAT)
                 
-                # 1. Pagi
-                # Sunarty (12:18) > 11:00 -> GAGAL masuk Pagi (Good!)
                 if t < limit_pagi_end:
                     if result['Pagi'] == '': result['Pagi'] = val_str
-                
-                # 2. Siang 1
-                # Sunarty (12:18) masuk range 11:01 - 12:59 -> MASUK SINI (Good!)
                 elif limit_siang_out_start <= t <= limit_siang_out_end:
                     if result['Siang_1'] == '': result['Siang_1'] = val_str
-                
-                # 3. Siang 2
-                # Yoga (13:23) masuk range 13:00 - 16:00 -> MASUK SINI (Good!)
                 elif limit_siang_in_start <= t <= limit_siang_in_end:
                     if result['Siang_2'] == '': result['Siang_2'] = val_str
-                
-                # 4. Sore
                 elif t >= start_sore:
-                    result['Sore'] = val_str 
+                    result['Sore'] = val_str
                 
-                # Fallback Sore (Jaga-jaga log terakhir)
+                # Fallback Sore (Jaga-jaga jika log terakhir adalah absen pulang)
                 if t == last_log and t >= time(16, 0, 0) and result['Sore'] == '':
                      result['Sore'] = val_str
 
             return pd.Series(result)
+
+        # 4. Eksekusi Apply dan Transformasi Akhir
+        if grouped.ngroups == 0: return pd.DataFrame()
+        
+        result_df = grouped.apply(process_group).reset_index()
+        result_df.rename(columns={AppConstants.COL_PERSON_NAME: AppConstants.COL_EMPLOYEE_NAME}, inplace=True)
+        
+        return result_df
 
         if grouped.ngroups == 0: return pd.DataFrame()
         result_df = grouped.apply(process_group).reset_index()
