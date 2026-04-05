@@ -730,7 +730,11 @@ class AttendanceService:
             for col in ['Pagi', 'Siang_1', 'Siang_2', 'Sore']:
                 df_final[col] = ''
 
+        # --- PERBAIKAN ERROR FLOAT64 ---
+        # Ubah tipe data seluruh tabel jadi 'object' (bebas) dulu, baru fillna
+        df_final = df_final.astype(object)
         df_final.fillna('', inplace=True)
+        
         return df_final, status_dict
 
     def calculate_metrics(self, df: pd.DataFrame, status_dict: Dict[str, str]) -> Dict[str, Any]:
