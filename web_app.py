@@ -2476,7 +2476,7 @@ class AttendanceController:
     def run_report_form(self) -> None:
         """Native Streamlit form for multiple attendance status submission."""
         st.markdown('<div class="brand-title">INPUT PERIZINAN</div>', unsafe_allow_html=True)
-        st.markdown('<div class="brand-subtitle">SUBMIT STATUS ANGGOTA SECARA MULTIPLE</div>', 
+        st.markdown('<div class="brand-subtitle">SUBMIT STATUS IZIN KARYAWAN</div>', 
                     unsafe_allow_html=True)
         
         st.info("📝 Tambahkan baris pada tabel di bawah untuk input beberapa orang sekaligus dengan keterangan berbeda.")
