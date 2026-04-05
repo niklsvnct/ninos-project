@@ -303,12 +303,17 @@ class AttendanceRepository(DataRepository):
     @st.cache_data(ttl=AppConstants.CACHE_TTL_SECONDS)
     def fetch(_self) -> Optional[pd.DataFrame]:
         try:
-            # Ini yang bikin tahan banting kalau CSV-nya berantakan
+            # Pake engine='python' biar CSV Absen kuat
             df = pd.read_csv(_self.url, on_bad_lines='skip', engine='python')
-            df = df.rename(columns=lambda x: x.strip())
+            df.columns = df.columns.str.strip()
+            
+            # INI YANG TADI HILANG: Mengubah kolom 'Nama' jadi 'Person Name'
+            if 'Nama' in df.columns:
+                df = df.rename(columns={'Nama': AppConstants.COL_PERSON_NAME})
+                
             return _self.transform(df)
         except Exception as e:
-            st.warning(f"⚠️ Gagal fetch data status: {str(e)}")
+            st.error(f"❌ Error saat mengambil data absen: {str(e)}")
             return None
 
     def validate(self, df: pd.DataFrame) -> bool:
@@ -428,14 +433,14 @@ class StatusRepository(DataRepository):
     
     @st.cache_data(ttl=AppConstants.CACHE_TTL_SECONDS)
     def fetch(_self) -> Optional[pd.DataFrame]:
-        """Fetch status data from Google Sheets."""
         try:
-            df = pd.read_csv(_self.url)
+            # Pake engine='python' biar CSV Status juga kuat
+            df = pd.read_csv(_self.url, on_bad_lines='skip', engine='python')
             df = df.rename(columns=lambda x: x.strip())
-            
-            if not _self.validate(df):
-                st.warning("⚠️ Status data validation failed")
-                return None
+            return _self.transform(df)
+        except Exception as e:
+            st.warning(f"⚠️ Gagal fetch data status: {str(e)}")
+            return None
             
             return _self.transform(df)
             
