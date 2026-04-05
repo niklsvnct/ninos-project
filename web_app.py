@@ -627,7 +627,8 @@ class AttendanceService:
 
         # Konversi ke object time untuk perbandingan
         df_clean['Waktu_Obj'] = pd.to_datetime(df_clean[AppConstants.COL_EVENT_TIME]).dt.time
-        grouped = df_clean.groupby([AppConstants.COL_PERSON_NAME, 'Tanggal'])
+        # Tambahkan as_index=False agar kolom 'Tanggal' tidak hilang menjadi index
+        grouped = df_clean.groupby([AppConstants.COL_PERSON_NAME, 'Tanggal'], as_index=False)
         
         def process_group(group):
             result = {'Pagi': '', 'Siang_1': '', 'Siang_2': '', 'Sore': ''}
@@ -641,7 +642,8 @@ class AttendanceService:
             last_log = sorted_group.iloc[-1]['Waktu_Obj']
             
             # 3. Cek Hari Jumat
-            is_friday = sorted_group.iloc[0]['Tanggal'].weekday() == 4
+            # Mengambil tanggal dari index level 'Tanggal' karena kolomnya sudah pindah ke index
+            is_friday = sorted_group.index.get_level_values('Tanggal')[0].weekday() == 4
             
             # --- LOGIKA PENENTUAN SHIFT ---
             is_shift_2 = False
@@ -767,15 +769,6 @@ class AttendanceService:
 
             return pd.Series(result)
 
-        if grouped.ngroups == 0: return pd.DataFrame()
-        result_df = grouped.apply(process_group).reset_index()
-        result_df.rename(columns={AppConstants.COL_PERSON_NAME: AppConstants.COL_EMPLOYEE_NAME}, inplace=True)
-        return result_df
-
-        if grouped.ngroups == 0: return pd.DataFrame()
-        result_df = grouped.apply(process_group).reset_index()
-        result_df.rename(columns={AppConstants.COL_PERSON_NAME: AppConstants.COL_EMPLOYEE_NAME}, inplace=True)
-        return result_df
         if grouped.ngroups == 0: return pd.DataFrame()
         result_df = grouped.apply(process_group).reset_index()
         result_df.rename(columns={AppConstants.COL_PERSON_NAME: AppConstants.COL_EMPLOYEE_NAME}, inplace=True)
