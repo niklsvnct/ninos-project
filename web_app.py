@@ -615,49 +615,52 @@ class AttendanceService:
     def extract_time_ranges(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Extracts attendance into Pagi, Siang1, Siang2, Sore columns.
-        VERSION: Optimized & Cleaned (Fixed KeyError & Duplicates)
+        FIXED: Menggunakan group.name untuk menghindari KeyError 'Tanggal'
         """
         if df.empty: return pd.DataFrame()
 
-        # 1. Bersihkan data & buat salinan
+        # 1. Pembersihan awal
         df_clean = df.dropna(subset=[AppConstants.COL_PERSON_NAME, 'Tanggal']).copy()
         if df_clean.empty: return pd.DataFrame()
 
-        # 2. Konversi ke object time untuk perbandingan logika
+        # 2. Persiapan waktu
         df_clean['Waktu_Obj'] = pd.to_datetime(df_clean[AppConstants.COL_EVENT_TIME]).dt.time
         
-        # 3. Grouping dengan as_index=False agar 'Tanggal' tetap jadi kolom biasa
+        # 3. Grouping
         grouped = df_clean.groupby([AppConstants.COL_PERSON_NAME, 'Tanggal'], as_index=False)
         
         def process_group(group):
             result = {'Pagi': '', 'Siang_1': '', 'Siang_2': '', 'Sore': ''}
             
-            # Sortir waktu dari pagi ke malam
+            # Sortir waktu
             sorted_group = group.sort_values(AppConstants.COL_EVENT_TIME)
             if sorted_group.empty: return pd.Series(result)
 
-            # Ambil data kunci (Log Pertama & Log Terakhir)
+            # Logika ambil Tanggal yang ANTI-ERROR:
+            # Karena kita group by [Nama, Tanggal], maka group.name adalah tuple (Nama, Tanggal)
+            # Kita ambil index [1] untuk dapat Tanggalnya
+            try:
+                current_date = group.name[1]
+            except:
+                # Fallback jika struktur group berbeda
+                current_date = sorted_group['Tanggal'].iloc[0] if 'Tanggal' in sorted_group.columns else date.today()
+
             first_log = sorted_group.iloc[0]['Waktu_Obj']
             last_log = sorted_group.iloc[-1]['Waktu_Obj']
+            is_friday = current_date.weekday() == 4
             
-            # Ambil Tanggal (Aman dari KeyError karena as_index=False)
-            is_friday = sorted_group['Tanggal'].iloc[0].weekday() == 4
-            
-            # --- LOGIKA PENENTUAN SHIFT ---
+            # --- PENENTUAN SHIFT ---
             is_shift_2 = False
-            # Rule: Pulang lewat jam 18:30 ATAU Datang di jam nanggung (09:00 - 11:30)
             if last_log > time(18, 30, 0) or (time(9, 0, 0) <= first_log <= time(11, 30, 0)):
                 is_shift_2 = True
             
-            # --- SETTING RANGE SLOT WAKTU BERDASARKAN SHIFT ---
+            # --- SETTING SLOT WAKTU ---
             if not is_shift_2:
-                # SHIFT 1 (07:00 - 17:00)
                 limit_pagi_end = time(11, 0, 0)
                 limit_siang_out_start, limit_siang_out_end = time(11, 30, 0), time(12, 59, 59)
                 limit_siang_in_start, limit_siang_in_end = time(13, 0, 0), time(14, 0, 0)
                 start_sore = time(17, 0, 0)
             else:
-                # SHIFT 2 (09:00 - 19:00)
                 limit_pagi_end = time(11, 0, 0)
                 if is_friday:
                     limit_siang_out_start, limit_siang_out_end = time(11, 30, 0), time(12, 59, 59)
@@ -667,7 +670,7 @@ class AttendanceService:
                     limit_siang_in_start, limit_siang_in_end = time(15, 0, 0), time(16, 0, 0)
                 start_sore = time(19, 0, 0)
 
-            # --- MAPPING DATA KE KOLOM ---
+            # --- MAPPING KE KOLOM ---
             for _, row in sorted_group.iterrows():
                 t = row['Waktu_Obj']
                 val_str = row[AppConstants.COL_EVENT_TIME].strftime(AppConstants.TIME_FORMAT)
@@ -681,11 +684,16 @@ class AttendanceService:
                 elif t >= start_sore:
                     result['Sore'] = val_str
                 
-                # Fallback Sore (Jaga-jaga jika log terakhir adalah absen pulang)
                 if t == last_log and t >= time(16, 0, 0) and result['Sore'] == '':
                      result['Sore'] = val_str
 
             return pd.Series(result)
+
+        # 4. Finalisasi (Hanya satu kali proses)
+        if grouped.ngroups == 0: return pd.DataFrame()
+        result_df = grouped.apply(process_group).reset_index()
+        result_df.rename(columns={AppConstants.COL_PERSON_NAME: AppConstants.COL_EMPLOYEE_NAME}, inplace=True)
+        return result_df
 
         # 4. Eksekusi Apply dan Transformasi Akhir
         if grouped.ngroups == 0: return pd.DataFrame()
