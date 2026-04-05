@@ -2482,32 +2482,25 @@ class AttendanceController:
         
         st.info("📝 Tambahkan baris pada tabel di bawah untuk input beberapa orang sekaligus dengan keterangan berbeda.")
         
-        # 1. Kontrol Tanggal & Filter Divisi
         col1, col2 = st.columns(2)
         with col1:
             target_date = st.date_input("📅 Tanggal Izin/Status", value=datetime.now().date())
         with col2:
-            # Filter divisi agar koordinator tidak pusing cari nama dari 100+ orang
             divisions = list(DivisionRegistry.get_all().keys())
             selected_div = st.selectbox("🏢 Filter Divisi (Opsional)", ["Semua Divisi"] + divisions)
             
-        # Tentukan list nama berdasarkan filter
         if selected_div == "Semua Divisi":
             available_names = DivisionRegistry.get_all_members()
         else:
             available_names = DivisionRegistry.get(selected_div).members
 
-        # 2. Setup Data Editor (Tabel Interaktif)
         st.markdown("### 📋 Tabel Input Status")
         
-        # Inisialisasi struktur tabel kosong di session_state jika belum ada
         if 'input_data' not in st.session_state:
             st.session_state['input_data'] = pd.DataFrame(columns=['Nama Karyawan', 'Keterangan'])
             
-        # Daftar status yang valid
         status_options = ['CR', 'SKD', 'OFF', 'IZIN', 'SAKIT', 'DL', 'CUTI']
         
-        # Render Data Editor
         edited_df = st.data_editor(
             st.session_state['input_data'],
             column_config={
@@ -2526,44 +2519,63 @@ class AttendanceController:
                     required=True,
                 )
             },
-            num_rows="dynamic", # Kunci utama: Bikin user bisa tambah/hapus baris sesuka hati
+            num_rows="dynamic", 
             use_container_width=True,
             key="status_editor"
         )
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # 3. Tombol Submit & Validasi
         if st.button("🚀 SUBMIT DATA KE SERVER", use_container_width=True):
             if edited_df.empty:
                 st.warning("⚠️ Tabel masih kosong! Klik tombol '+' atau 'Add Row' untuk menambah data.")
             elif edited_df.isnull().values.any():
                 st.error("❌ Ada baris yang belum lengkap! Pastikan Nama dan Keterangan terisi semua.")
             else:
-                with st.spinner("Menyimpan data..."):
-                    # --- SIAPKAN DATA UNTUK DIKIRIM ---
+                with st.spinner("Menyimpan data ke Google Sheets..."):
+                    import gspread
+                    from google.oauth2.service_account import Credentials
+                    
+                    # Siapkan data dalam bentuk List
                     records_to_save = []
                     timestamp = datetime.now().strftime(AppConstants.DATETIME_FORMAT)
-                    date_str = target_date.strftime("%-m/%-d/%Y") # Format standar G-Sheets
+                    date_str = target_date.strftime(AppConstants.DATE_FORMAT) 
                     
                     for _, row in edited_df.iterrows():
-                        records_to_save.append({
-                            "Timestamp": timestamp,
-                            "Tanggal": date_str,
-                            "Nama Karyawan": row['Nama Karyawan'],
-                            "Keterangan": row['Keterangan']
-                        })
+                        records_to_save.append([
+                            timestamp,
+                            date_str,
+                            row['Nama Karyawan'],
+                            row['Keterangan']
+                        ])
                     
-                    # --- LOGIC PENYIMPANAN KE GOOGLE SHEETS ---
-                    # Disini nanti kita taruh fungsi untuk push data ke Google Sheets
-                    # st.write(records_to_save) # (Bisa di-uncomment untuk test lihat bentuk datanya)
-                    
-                    st.success(f"✅ Berhasil memproses {len(records_to_save)} data personel!")
-                    
-                    # Bersihkan tabel setelah sukses submit
-                    st.session_state['input_data'] = pd.DataFrame(columns=['Nama Karyawan', 'Keterangan'])
-                    # Paksa refresh agar tabel kosong lagi
-                    st.rerun()
+                    try:
+                        # Autentikasi Robot
+                        scopes = [
+                            "https://www.googleapis.com/auth/spreadsheets",
+                            "https://www.googleapis.com/auth/drive"
+                        ]
+                        creds_dict = dict(st.secrets["gcp_service_account"])
+                        creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
+                        client = gspread.authorize(creds)
+                        
+                        # Buka Sheet Baru
+                        # GANTI DENGAN ID SPREADSHEET BARU KAMU (yang di URL)
+                        SPREADSHEET_ID = "MASUKKAN_ID_SPREADSHEET_BARU_DISINI" 
+                        # Nama tab default untuk sheet baru adalah Sheet1
+                        SHEET_NAME = "Sheet1" 
+                        
+                        sheet = client.open_by_key(SPREADSHEET_ID).worksheet(SHEET_NAME)
+                        
+                        # Tembak data ke Sheet
+                        sheet.append_rows(records_to_save)
+                        
+                        st.success(f"✅ Berhasil memproses {len(records_to_save)} data personel!")
+                        st.session_state['input_data'] = pd.DataFrame(columns=['Nama Karyawan', 'Keterangan'])
+                        st.rerun()
+                        
+                    except Exception as e:
+                        st.error(f"❌ Gagal mengirim data ke Google Sheets: {str(e)}")
 
 # ================================================================================
 # SECTION 9: ADDITIONAL FEATURES & UTILITIES
