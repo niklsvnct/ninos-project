@@ -2560,7 +2560,7 @@ class AttendanceController:
                         
                         # Buka Sheet Baru
                         # GANTI DENGAN ID SPREADSHEET BARU KAMU (yang di URL)
-                        SPREADSHEET_ID = "MASUKKAN_ID_SPREADSHEET_BARU_DISINI" 
+                        SPREADSHEET_ID = "1gaRK7hjjL26NSzkC3YPJ-LUaNlYTmpi0N9KX8awdq2g" 
                         # Nama tab default untuk sheet baru adalah Sheet1
                         SHEET_NAME = "Sheet1" 
                         
