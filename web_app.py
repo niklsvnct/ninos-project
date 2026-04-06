@@ -2567,7 +2567,7 @@ class AttendanceController:
                         
                         # --- BUKA SPREADSHEET (JALUR VIP ANTI GAGAL) ---
                         # Kita pakai URL full biar nggak nyasar!
-                        target_url = "https://docs.google.com/spreadsheets/d/1gaRK7hjjL26NSzkC3YPJ-LUaNlYTmpi0N9KX8awdq2g/edit"
+                        target_url = "https://docs.google.com/spreadsheets/d/1gaRK7hjjL26NSzkC3YPJ-LUaNIYTmpi0N9KX8awdq2g/edit?hl=id&gid=0#gid=0"
                         
                         # Pakai .sheet1 otomatis memaksa robot ngambil Tab paling pertama, tanpa peduli namanya apa (Sheet1/Lembar1 bebas!)
                         sheet = client.open_by_url(target_url).sheet1
