@@ -2474,24 +2474,50 @@ class AttendanceController:
             )
 
     def run_report_form(self) -> None:
-        """Native Streamlit form for multiple attendance status submission."""
-        import time  # Pastikan ini ada biar kita bisa kasih jeda waktu
+        """Native Streamlit form for multiple attendance status submission with Date Range & History."""
+        import time
+        from datetime import timedelta
         
         st.markdown('<div class="brand-title">INPUT PERIZINAN</div>', unsafe_allow_html=True)
-        st.markdown('<div class="brand-subtitle">SUBMIT STATUS IZIN KARYAWAN</div>', 
-                    unsafe_allow_html=True)
+        st.markdown('<div class="brand-subtitle">SUBMIT STATUS IZIN KARYAWAN</div>', unsafe_allow_html=True)
         
-        st.info("📝 Tambahkan baris pada tabel di bawah untuk input beberapa orang sekaligus dengan keterangan berbeda.\n\n💡 **Tips:** Untuk menghapus 1 baris yang salah, klik/centang ujung paling kiri baris tersebut, lalu tekan tombol **Delete** di keyboard.")
+        st.info("📝 Tambahkan baris pada tabel di bawah. Sekarang bisa pilih **Rentang Tanggal** sekaligus, dan wajib mengisi **Nama Pelapor**.")
         
+        # --- INIT SESSION STATE UNTUK HISTORY ---
+        if 'history_input' not in st.session_state:
+            st.session_state['history_input'] = []
+
+        # --- INPUT NAMA PELAPOR ---
+        semua_nama = DivisionRegistry.get_all_members()
+        pelapor = st.selectbox(
+            "🕵️‍♂️ Nama Pelapor (Siapa yang submit data ini?)", 
+            ["-- Pilih Nama Kamu --"] + semua_nama,
+            help="Wajib diisi agar tercatat di sistem siapa yang memasukkan status kehadiran."
+        )
+
         col1, col2 = st.columns(2)
         with col1:
-            target_date = st.date_input("📅 Tanggal Izin/Status", value=datetime.now().date())
+            # --- DATE RANGE SELECTION ---
+            tanggal_range = st.date_input(
+                "📅 Rentang Tanggal Izin/Status", 
+                value=(datetime.now().date(), datetime.now().date()),
+                help="Pilih tanggal mulai, lalu klik tanggal selesai. Jika hanya 1 hari, klik tanggal yang sama 2x."
+            )
+            
+            # Handling output dari st.date_input untuk rentang waktu
+            if isinstance(tanggal_range, tuple) and len(tanggal_range) == 2:
+                start_date, end_date = tanggal_range
+            elif isinstance(tanggal_range, tuple) and len(tanggal_range) == 1:
+                start_date = end_date = tanggal_range[0]
+            else:
+                start_date = end_date = tanggal_range
+
         with col2:
             divisions = list(DivisionRegistry.get_all().keys())
             selected_div = st.selectbox("🏢 Filter Divisi (Opsional)", ["Semua Divisi"] + divisions)
             
         if selected_div == "Semua Divisi":
-            available_names = DivisionRegistry.get_all_members()
+            available_names = semua_nama
         else:
             available_names = DivisionRegistry.get(selected_div).members
 
@@ -2506,16 +2532,12 @@ class AttendanceController:
             st.session_state['input_data'],
             column_config={
                 "Nama Karyawan": st.column_config.SelectboxColumn(
-                    "👤 Nama Karyawan",
-                    help="Pilih nama personel",
-                    width="large",
+                    "👤 Nama Karyawan (Yang Izin)",
                     options=available_names,
                     required=True,
                 ),
                 "Keterangan": st.column_config.SelectboxColumn(
                     "📝 Keterangan",
-                    help="Pilih status kehadiran",
-                    width="medium",
                     options=status_options,
                     required=True,
                 )
@@ -2527,69 +2549,87 @@ class AttendanceController:
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # --- TOMBOL SUBMIT & RESET BERSEBELAHAN ---
         col_btn1, col_btn2 = st.columns([3, 1])
-        
         with col_btn1:
             submit_btn = st.button("🚀 SUBMIT DATA KE SERVER", use_container_width=True)
         with col_btn2:
             reset_btn = st.button("🗑️ RESET TABEL", use_container_width=True)
             
-        # Logika Tombol Reset
         if reset_btn:
             st.session_state['input_data'] = pd.DataFrame(columns=['Nama Karyawan', 'Keterangan'])
             st.rerun()
             
-        # Logika Tombol Submit
         if submit_btn:
             clean_df = edited_df.dropna(subset=['Nama Karyawan', 'Keterangan']).copy()
             
-            if clean_df.empty:
-                st.warning("⚠️ Tabel masih kosong atau ada baris yang belum lengkap! Pastikan Nama dan Keterangan terisi.")
+            # --- VALIDASI PELAPOR & TABEL ---
+            if pelapor == "-- Pilih Nama Kamu --":
+                st.error("❌ ERROR: Tolong pilih Nama Pelapor di bagian atas sebelum submit!")
+            elif clean_df.empty:
+                st.warning("⚠️ Tabel masih kosong atau ada baris yang belum lengkap!")
             else:
-                with st.spinner("Menyimpan data ke Google Sheets..."):
+                with st.spinner(f"Menyimpan data dari {start_date.strftime('%d-%b')} sampai {end_date.strftime('%d-%b')}..."):
                     import gspread
                     from google.oauth2.service_account import Credentials
                     
                     records_to_save = []
                     timestamp = datetime.now().strftime(AppConstants.DATETIME_FORMAT)
-                    date_str = target_date.strftime(AppConstants.DATE_FORMAT) 
                     
+                    # --- LOGIKA PECAH RENTANG TANGGAL ---
                     for _, row in clean_df.iterrows():
-                        records_to_save.append([
-                            timestamp,
-                            date_str,
-                            row['Nama Karyawan'],
-                            row['Keterangan']
-                        ])
+                        curr_date = start_date
+                        while curr_date <= end_date:
+                            records_to_save.append([
+                                timestamp,
+                                curr_date.strftime(AppConstants.DATE_FORMAT),
+                                row['Nama Karyawan'],
+                                row['Keterangan'],
+                                pelapor # Menyisipkan nama pelapor ke kolom Google Sheets
+                            ])
+                            curr_date += timedelta(days=1)
                     
                     try:
-                        # --- AUTENTIKASI ROBOT ---
-                        scopes = [
-                            "https://www.googleapis.com/auth/spreadsheets",
-                            "https://www.googleapis.com/auth/drive"
-                        ]
+                        scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
                         creds_dict = dict(st.secrets["gcp_service_account"])
                         creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
                         client = gspread.authorize(creds)
                         
-                        # --- BUKA SPREADSHEET (PAKE URL ASLI!) ---
-                        # HAPUS URL INI DAN PASTE URL FILE "REKAP IZIN" KAMU YANG ASLI DARI BROWSER!
+                        # --- PASTIKAN URL INI BENAR SESUAI PUNYAMU ---
                         target_url = "https://docs.google.com/spreadsheets/d/1gaRK7hjjL26NSzkC3YPJ-LUaNIYTmpi0N9KX8awdq2g/edit?hl=id&gid=0#gid=0"
-                        
                         sheet = client.open_by_url(target_url).sheet1
                         
-                        # --- TEMBAK DATA ---
                         sheet.append_rows(records_to_save)
                         
-                        st.success(f"✅ Berhasil menyimpan {len(records_to_save)} data personel ke Database!")
+                        # --- UPDATE HISTORY ---
+                        st.session_state['history_input'].insert(0, {
+                            "waktu": timestamp,
+                            "pelapor": pelapor,
+                            "rentang": f"{start_date.strftime('%d %b')} - {end_date.strftime('%d %b')}",
+                            "data": clean_df.to_dict('records')
+                        })
                         
-                        # Bersihkan tabel
+                        # Batasi history maksimal 5 yang terakhir biar ga menuhin layar
+                        if len(st.session_state['history_input']) > 5:
+                            st.session_state['history_input'].pop()
+                            
+                        st.success(f"✅ Berhasil menyimpan total {len(records_to_save)} baris data kehadiran ke Database!")
+                        
+                        # Reset tabel input
                         st.session_state['input_data'] = pd.DataFrame(columns=['Nama Karyawan', 'Keterangan'])
+                        time.sleep(1.5) # Jeda dikit biar suksesnya kebaca user
                         st.rerun()
                         
                     except Exception as e:
                         st.error(f"❌ Gagal mengirim data: {str(e)}")
+
+        # --- SECTION TAMPILAN HISTORY ---
+        if len(st.session_state.get('history_input', [])) > 0:
+            st.markdown("---")
+            st.markdown("### 🕒 Riwayat Input Terakhir")
+            for hist in st.session_state['history_input']:
+                with st.expander(f"✅ Dimasukkan oleh **{hist['pelapor']}** (Rentang: {hist['rentang']}) - {hist['waktu']}"):
+                    hist_df = pd.DataFrame(hist['data'])
+                    st.dataframe(hist_df, hide_index=True, use_container_width=True)
 
 # ================================================================================
 # SECTION 9: ADDITIONAL FEATURES & UTILITIES
