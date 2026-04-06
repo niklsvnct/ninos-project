@@ -2482,7 +2482,7 @@ class AttendanceController:
         st.markdown('<div class="brand-title">INPUT PERIZINAN</div>', unsafe_allow_html=True)
         st.markdown('<div class="brand-subtitle">SUBMIT STATUS IZIN KARYAWAN</div>', unsafe_allow_html=True)
         
-        st.info("📝 Isi tabel di bawah. Sekarang kamu bisa atur **Tanggal Mulai** dan **Tanggal Selesai** untuk masing-masing orang secara terpisah. Jika hanya izin 1 hari, samakan Tanggal Mulai dan Selesai.")
+        st.info("📝 Isi tabel di bawah")
         
         if 'history_input' not in st.session_state:
             st.session_state['history_input'] = []
@@ -2498,7 +2498,7 @@ class AttendanceController:
 
         # Filter Divisi untuk mempermudah cari nama di tabel
         semua_nama = DivisionRegistry.get_all_members()
-        selected_div = st.selectbox("🏢 Filter Divisi Karyawan (Opsional, untuk filter nama di tabel)", ["Semua Divisi"] + daftar_divisi)
+        selected_div = st.selectbox("🏢 Filter Unit)", ["Semua Divisi"] + daftar_unit)
             
         if selected_div == "Semua Divisi":
             available_names = semua_nama
@@ -2550,7 +2550,7 @@ class AttendanceController:
         
         col_btn1, col_btn2 = st.columns([3, 1])
         with col_btn1:
-            submit_btn = st.button("🚀 SUBMIT DATA KE SERVER", use_container_width=True)
+            submit_btn = st.button("SUBMIT DATA KE SERVER", use_container_width=True)
         with col_btn2:
             reset_btn = st.button("🗑️ RESET TABEL", use_container_width=True)
             
