@@ -151,8 +151,8 @@ class DataSourceConfig:
     # GANTI YANG INI DENGAN LINK BARU:
     ATTENDANCE_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_GhoIb1riX98FsP8W4f2-_dH_PLcLDZskjNOyDcnnvOhBg8FUp3xJ-c_YgV0Pw71k4STy4rR0_MS5/pub?gid=1877240181&single=true&output=csv"
     
-    # YANG INI BIARKAN SAJA:
-    STATUS_SHEET_URL = "https://docs.google.com/spreadsheets/d/1gaRK7hjjL26NSzkC3YPJ-LUaNlYTmpi0N9KX8awdq2g/export?format=csv"
+    # GANTI KEMBALI KE LINK PUBLISH TO WEB ASLI MILIKMU INI:
+    STATUS_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTqNDM3uA1nYTc3xWfhHxj4tBu8mdiimwnr4BCqz2gI8uXZAygPfaahlf9YUr73U6XySvRQO566DH5s/pub?output=csv"
     # Google Forms
     REPORT_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeopdaE-lyOtFd2TUr5C3K2DWE3Syt2PaKoXMp0cmWKIFnijw/viewform?usp=header"
     
