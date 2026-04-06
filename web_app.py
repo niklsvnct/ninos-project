@@ -148,7 +148,7 @@ class DivisionConfig:
 
 
 class DataSourceConfig:
-    # GANTI YANG INI DENGAN LINK BARU:
+    # Ini biarkan saja (mesin absen)
     ATTENDANCE_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_GhoIb1riX98FsP8W4f2-_dH_PLcLDZskjNOyDcnnvOhBg8FUp3xJ-c_YgV0Pw71k4STy4rR0_MS5/pub?gid=1877240181&single=true&output=csv"
     
     # GANTI KEMBALI KE LINK PUBLISH TO WEB ASLI MILIKMU INI:
