@@ -2575,7 +2575,7 @@ class AttendanceController:
                         
                         # --- BUKA SPREADSHEET (PAKE URL ASLI!) ---
                         # HAPUS URL INI DAN PASTE URL FILE "REKAP IZIN" KAMU YANG ASLI DARI BROWSER!
-                        target_url = "https://docs.google.com/spreadsheets/d/PASTE_LINK_ASLI_DARI_BROWSER_DI_SINI/edit"
+                        target_url = "https://docs.google.com/spreadsheets/d/1gaRK7hjjL26NSzkC3YPJ-LUaNIYTmpi0N9KX8awdq2g/edit?hl=id&gid=0#gid=0"
                         
                         sheet = client.open_by_url(target_url).sheet1
                         
