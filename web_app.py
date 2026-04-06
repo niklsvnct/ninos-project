@@ -2525,22 +2525,24 @@ class AttendanceController:
         
         st.markdown("<br>", unsafe_allow_html=True)
         
+        # 3. Tombol Submit & Validasi
         if st.button("🚀 SUBMIT DATA KE SERVER", use_container_width=True):
-            if edited_df.empty:
-                st.warning("⚠️ Tabel masih kosong! Klik tombol '+' atau 'Add Row' untuk menambah data.")
-            elif edited_df.isnull().values.any():
-                st.error("❌ Ada baris yang belum lengkap! Pastikan Nama dan Keterangan terisi semua.")
+            # Bersihkan otomatis baris yang belum selesai diisi (yang masih "None")
+            clean_df = edited_df.dropna(subset=['Nama Karyawan', 'Keterangan']).copy()
+            
+            if clean_df.empty:
+                st.warning("⚠️ Tabel masih kosong atau ada baris yang belum lengkap! Pastikan Nama dan Keterangan terisi.")
             else:
                 with st.spinner("Menyimpan data ke Google Sheets..."):
                     import gspread
                     from google.oauth2.service_account import Credentials
                     
-                    # Siapkan data dalam bentuk List
+                    # --- SIAPKAN DATA UNTUK DIKIRIM ---
                     records_to_save = []
                     timestamp = datetime.now().strftime(AppConstants.DATETIME_FORMAT)
-                    date_str = target_date.strftime(AppConstants.DATE_FORMAT) 
+                    date_str = target_date.strftime(AppConstants.DATE_FORMAT)
                     
-                    for _, row in edited_df.iterrows():
+                    for _, row in clean_df.iterrows():
                         records_to_save.append([
                             timestamp,
                             date_str,
@@ -2548,33 +2550,43 @@ class AttendanceController:
                             row['Keterangan']
                         ])
                     
+                    # Definisikan variabel di luar try supaya detektif bisa membacanya
+                    robot_email = "BELUM TERBACA DARI SECRETS"
+                    target_id = "1gaRK7hjjL26NSzkC3YPJ-LUaNlYTmpi0N9KX8awdq2g"
+                    
                     try:
-                        # Autentikasi Robot
+                        # --- AUTENTIKASI ROBOT ---
                         scopes = [
                             "https://www.googleapis.com/auth/spreadsheets",
                             "https://www.googleapis.com/auth/drive"
                         ]
                         creds_dict = dict(st.secrets["gcp_service_account"])
                         creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
+                        robot_email = creds.service_account_email # Tangkap email yang lagi jalan
                         client = gspread.authorize(creds)
                         
-                        # Buka Sheet Baru
-                        # GANTI DENGAN ID SPREADSHEET BARU KAMU (yang di URL)
-                        SPREADSHEET_ID = "1gaRK7hjjL26NSzkC3YPJ-LUaNlYTmpi0N9KX8awdq2g" 
-                        # Nama tab default untuk sheet baru adalah Sheet1
-                        SHEET_NAME = "Sheet1" 
+                        # --- BUKA SPREADSHEET BARU ---
+                        sheet = client.open_by_key(target_id).worksheet("Sheet1")
                         
-                        sheet = client.open_by_key(SPREADSHEET_ID).worksheet(SHEET_NAME)
-                        
-                        # Tembak data ke Sheet
+                        # --- TEMBAK DATA ---
                         sheet.append_rows(records_to_save)
                         
-                        st.success(f"✅ Berhasil memproses {len(records_to_save)} data personel!")
+                        st.success(f"✅ Berhasil menyimpan {len(records_to_save)} data personel ke Database!")
+                        
+                        # Bersihkan tabel
                         st.session_state['input_data'] = pd.DataFrame(columns=['Nama Karyawan', 'Keterangan'])
                         st.rerun()
                         
                     except Exception as e:
                         st.error(f"❌ Gagal mengirim data ke Google Sheets: {str(e)}")
+                        st.info("🔍 **INFO DETEKTIF UNTUK ABBYS:**")
+                        st.warning(f"🤖 Email Robot yg lagi jalan: **{robot_email}**")
+                        st.warning(f"📁 ID Target File: **{target_id}**")
+                        st.markdown("""
+                        **Penyebab Error:**
+                        Jika *Email Robot* di atas **berbeda** dengan yang kamu undang di Google Sheets, berarti web kamu masih nge-baca *Secrets* yang lama. 
+                        *(Ingat: Kalau kamu nge-run web ini di laptop/lokal, ganti Secrets di web Streamlit Cloud nggak akan ngaruh, kamu harus bikin file `.streamlit/secrets.toml` di folder laptopmu!)*
+                        """)
 
 # ================================================================================
 # SECTION 9: ADDITIONAL FEATURES & UTILITIES
