@@ -2475,11 +2475,13 @@ class AttendanceController:
 
     def run_report_form(self) -> None:
         """Native Streamlit form for multiple attendance status submission."""
+        import time  # Pastikan ini ada biar kita bisa kasih jeda waktu
+        
         st.markdown('<div class="brand-title">INPUT PERIZINAN</div>', unsafe_allow_html=True)
         st.markdown('<div class="brand-subtitle">SUBMIT STATUS IZIN KARYAWAN</div>', 
                     unsafe_allow_html=True)
         
-        st.info("📝 Tambahkan baris pada tabel di bawah untuk input beberapa orang sekaligus dengan keterangan berbeda.")
+        st.info("📝 Tambahkan baris pada tabel di bawah untuk input beberapa orang sekaligus dengan keterangan berbeda.\n\n💡 **Tips:** Untuk menghapus 1 baris yang salah, klik/centang ujung paling kiri baris tersebut, lalu tekan tombol **Delete** di keyboard.")
         
         col1, col2 = st.columns(2)
         with col1:
@@ -2525,9 +2527,21 @@ class AttendanceController:
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # 3. Tombol Submit & Validasi
-        if st.button("🚀 SUBMIT DATA KE SERVER", use_container_width=True):
-            # Bersihkan otomatis baris yang belum selesai diisi (yang masih "None")
+        # --- TOMBOL SUBMIT & RESET BERSEBELAHAN ---
+        col_btn1, col_btn2 = st.columns([3, 1])
+        
+        with col_btn1:
+            submit_btn = st.button("🚀 SUBMIT DATA KE SERVER", use_container_width=True)
+        with col_btn2:
+            reset_btn = st.button("🗑️ RESET TABEL", use_container_width=True)
+            
+        # Logika Tombol Reset
+        if reset_btn:
+            st.session_state['input_data'] = pd.DataFrame(columns=['Nama Karyawan', 'Keterangan'])
+            st.rerun()
+            
+        # Logika Tombol Submit
+        if submit_btn:
             clean_df = edited_df.dropna(subset=['Nama Karyawan', 'Keterangan']).copy()
             
             if clean_df.empty:
@@ -2537,10 +2551,9 @@ class AttendanceController:
                     import gspread
                     from google.oauth2.service_account import Credentials
                     
-                    # --- SIAPKAN DATA UNTUK DIKIRIM ---
                     records_to_save = []
                     timestamp = datetime.now().strftime(AppConstants.DATETIME_FORMAT)
-                    date_str = target_date.strftime(AppConstants.DATE_FORMAT)
+                    date_str = target_date.strftime(AppConstants.DATE_FORMAT) 
                     
                     for _, row in clean_df.iterrows():
                         records_to_save.append([
@@ -2550,50 +2563,36 @@ class AttendanceController:
                             row['Keterangan']
                         ])
                     
-                    # Definisikan variabel di luar try supaya detektif bisa membacanya
-                    robot_email = "BELUM TERBACA DARI SECRETS"
-                    target_id = "1gaRK7hjjL26NSzkC3YPJ-LUaNlYTmpi0N9KX8awdq2g"
-                    
                     try:
-                        # --- AUTENTIKASI ROBOT ---
                         scopes = [
                             "https://www.googleapis.com/auth/spreadsheets",
                             "https://www.googleapis.com/auth/drive"
                         ]
                         creds_dict = dict(st.secrets["gcp_service_account"])
                         creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
-                        robot_email = creds.service_account_email
                         client = gspread.authorize(creds)
                         
-                        # --- BUKA SPREADSHEET (JALUR VIP ANTI GAGAL) ---
-                        # Kita pakai URL full biar nggak nyasar!
-                        target_url = "https://docs.google.com/spreadsheets/d/1gaRK7hjjL26NSzkC3YPJ-LUaNIYTmpi0N9KX8awdq2g/edit?hl=id&gid=0#gid=0"
-                        
-                        # Pakai .sheet1 otomatis memaksa robot ngambil Tab paling pertama, tanpa peduli namanya apa (Sheet1/Lembar1 bebas!)
+                        # --- GANTI URL INI JIKA NANTI BIKIN FILE BARU LAGI ---
+                        target_url = "https://docs.google.com/spreadsheets/d/1gaRK7hjjL26NSzkC3YPJ-LUaNlYTmpi0N9KX8awdq2g/edit"
                         sheet = client.open_by_url(target_url).sheet1
                         
-                        # --- TEMBAK DATA ---
                         sheet.append_rows(records_to_save)
                         
-                        st.success(f"✅ Berhasil menyimpan {len(records_to_save)} data personel ke Database!")
+                        # --- NOTIFIKASI SUKSES & PEMBERSIHAN ---
+                        st.balloons() # Munculkan efek balon
+                        st.success(f"✅ MANTAP! Berhasil menyimpan {len(records_to_save)} data personel ke Database!")
                         
-                        # Bersihkan tabel
+                        # Set tabel kembali kosong di belakang layar
                         st.session_state['input_data'] = pd.DataFrame(columns=['Nama Karyawan', 'Keterangan'])
+                        
+                        # Tahan layar 2 detik agar user bisa membaca tulisan sukses
+                        time.sleep(2) 
+                        
+                        # Refresh layar untuk menampilkan tabel yang sudah kosong
                         st.rerun()
                         
                     except Exception as e:
                         st.error(f"❌ Gagal mengirim data: {str(e)}")
-                        
-                    except Exception as e:
-                        st.error(f"❌ Gagal mengirim data ke Google Sheets: {str(e)}")
-                        st.info("🔍 **INFO DETEKTIF UNTUK ABBYS:**")
-                        st.warning(f"🤖 Email Robot yg lagi jalan: **{robot_email}**")
-                        st.warning(f"📁 ID Target File: **{target_id}**")
-                        st.markdown("""
-                        **Penyebab Error:**
-                        Jika *Email Robot* di atas **berbeda** dengan yang kamu undang di Google Sheets, berarti web kamu masih nge-baca *Secrets* yang lama. 
-                        *(Ingat: Kalau kamu nge-run web ini di laptop/lokal, ganti Secrets di web Streamlit Cloud nggak akan ngaruh, kamu harus bikin file `.streamlit/secrets.toml` di folder laptopmu!)*
-                        """)
 
 # ================================================================================
 # SECTION 9: ADDITIONAL FEATURES & UTILITIES
