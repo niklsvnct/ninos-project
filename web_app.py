@@ -2564,6 +2564,7 @@ class AttendanceController:
                         ])
                     
                     try:
+                        # --- AUTENTIKASI ROBOT ---
                         scopes = [
                             "https://www.googleapis.com/auth/spreadsheets",
                             "https://www.googleapis.com/auth/drive"
@@ -2572,23 +2573,19 @@ class AttendanceController:
                         creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
                         client = gspread.authorize(creds)
                         
-                        # --- GANTI URL INI JIKA NANTI BIKIN FILE BARU LAGI ---
-                        target_url = "https://docs.google.com/spreadsheets/d/1gaRK7hjjL26NSzkC3YPJ-LUaNlYTmpi0N9KX8awdq2g/edit"
+                        # --- BUKA SPREADSHEET (PAKE URL ASLI!) ---
+                        # HAPUS URL INI DAN PASTE URL FILE "REKAP IZIN" KAMU YANG ASLI DARI BROWSER!
+                        target_url = "https://docs.google.com/spreadsheets/d/PASTE_LINK_ASLI_DARI_BROWSER_DI_SINI/edit"
+                        
                         sheet = client.open_by_url(target_url).sheet1
                         
+                        # --- TEMBAK DATA ---
                         sheet.append_rows(records_to_save)
                         
-                        # --- NOTIFIKASI SUKSES & PEMBERSIHAN ---
-                        st.balloons() # Munculkan efek balon
-                        st.success(f"✅ MANTAP! Berhasil menyimpan {len(records_to_save)} data personel ke Database!")
+                        st.success(f"✅ Berhasil menyimpan {len(records_to_save)} data personel ke Database!")
                         
-                        # Set tabel kembali kosong di belakang layar
+                        # Bersihkan tabel
                         st.session_state['input_data'] = pd.DataFrame(columns=['Nama Karyawan', 'Keterangan'])
-                        
-                        # Tahan layar 2 detik agar user bisa membaca tulisan sukses
-                        time.sleep(2) 
-                        
-                        # Refresh layar untuk menampilkan tabel yang sudah kosong
                         st.rerun()
                         
                     except Exception as e:
