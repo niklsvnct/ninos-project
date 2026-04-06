@@ -3214,54 +3214,131 @@ def render_settings_page() -> None:
             help="Automatically archive reports older than 30 days"
         )
 
+def render_login_page():
+    """Render custom login page matching the provided design."""
+    st.markdown("""
+    <style>
+        /* Background halaman login */
+        .stApp {
+            background: linear-gradient(rgba(20, 25, 35, 0.85), rgba(20, 25, 35, 0.95)), url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=2074&auto=format&fit=crop') no-repeat center center fixed;
+            background-size: cover;
+        }
+        /* Hilangkan sidebar di halaman login */
+        [data-testid="stSidebar"] { display: none; }
+        
+        /* Styling Kotak Putih */
+        .login-card {
+            background-color: #f8f9fa;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            text-align: center;
+            margin-top: 10vh;
+        }
+        .login-title { font-family: 'Inter', sans-serif; font-size: 2rem; font-weight: 800; color: #1e2530; margin-bottom: 5px; }
+        .login-subtitle { font-size: 0.9rem; color: #546e7a; margin-bottom: 30px; }
+        
+        /* Styling Tombol Biru */
+        .stFormSubmitButton button { background-color: #0d6efd !important; color: white !important; border: none !important; width: 100% !important; border-radius: 6px !important; font-weight: bold !important; padding: 10px !important; letter-spacing: 1px !important; }
+        .stFormSubmitButton button:hover { background-color: #0b5ed7 !important; }
+        .stTextInput input { background-color: white !important; color: #1e2530 !important; border: 1px solid #ced4da !important; }
+    </style>
+    """, unsafe_allow_html=True)
 
+    col1, col2, col3 = st.columns([1, 1.2, 1])
+
+    with col2:
+        st.markdown('<div class="login-card">', unsafe_allow_html=True)
+        st.markdown('<div class="login-title">Weda Bay Airport</div>', unsafe_allow_html=True)
+        st.markdown('<div class="login-subtitle">Absence Center Management System</div>', unsafe_allow_html=True)
+
+        with st.form("login_form", clear_on_submit=False):
+            username = st.text_input("Username", placeholder="Username", label_visibility="collapsed")
+            password = st.text_input("Password", type="password", placeholder="Password", label_visibility="collapsed")
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            submit = st.form_submit_button("SIGN IN")
+
+            if submit:
+                # --- DAFTAR 4 AKUN ---
+                valid_users = {
+                    "admin": "admin123",
+                    "kaban": "kaban2026",
+                    "spt_spv": "spt2026",
+                    "koordinator": "koor2026"
+                }
+
+                if username.lower() in valid_users and valid_users[username.lower()] == password:
+                    st.session_state['authenticated'] = True
+                    st.session_state['current_user'] = username.upper()
+                    st.rerun()
+                else:
+                    st.error("❌ Username atau Password salah!")
+                    
+        st.markdown('</div>', unsafe_allow_html=True)
 def main() -> None:
     """
     Main application entry point.
     Orchestrates the entire application flow.
     """
-    # Configure page
+    # 1. Konfigurasi halaman dasar
     configure_page()
     
-    # Initialize configurations
-    ConfigurationManager.initialize_session_state()
-    initialize_divisions()
-    
-    # Apply styling
-    ThemeManager.apply_global_styles()
-    
-    # Initialize performance monitoring
-    performance_monitor = PerformanceMonitor()
-    performance_monitor.start_timer('app_load')
-    
-    # Render sidebar and get menu selection
-    selected_menu = render_sidebar()
-    
-    # Initialize controller
-    controller = AttendanceController()
-    
-    # Route to appropriate page
-    try:
-        if selected_menu == "📊 Dashboard":
-            controller.run_dashboard()
+    # 2. Inisialisasi status login
+    if 'authenticated' not in st.session_state:
+        st.session_state['authenticated'] = False
+
+    # 3. Logika Pintu Masuk
+    if not st.session_state['authenticated']:
+        # Jika belum login, tampilkan form login
+        render_login_page()
+    else:
+        # JIKA SUDAH LOGIN, JALANKAN SELURUH APLIKASI
+        ConfigurationManager.initialize_session_state()
+        initialize_divisions()
+        ThemeManager.apply_global_styles()
         
-        elif selected_menu == "📝 Submit Report":
-            controller.run_report_form()
+        performance_monitor = PerformanceMonitor()
+        performance_monitor.start_timer('app_load')
         
-        elif selected_menu == "⚙️ Settings":
-            render_settings_page()
-        
-        # Show performance metrics in debug mode
-        load_time = performance_monitor.end_timer('app_load')
-        if load_time > 0:
-            st.sidebar.caption(f"⏱️ Load time: {load_time:.2f}s")
-    
-    except Exception as e:
-        st.error(f"⚠️ Application Error: {str(e)}")
-        st.exception(e)
-        
-        if st.button("🔄 Reload Application"):
+        # Tambahkan Info User & Tombol Logout di Sidebar
+        st.sidebar.markdown(f"👤 Login as: **{st.session_state.get('current_user', 'USER')}**")
+        if st.sidebar.button("🚪 LOGOUT", use_container_width=True):
+            st.session_state['authenticated'] = False
+            st.cache_data.clear()
             st.rerun()
+            
+        st.sidebar.markdown("---")
+        
+        # Render menu aplikasi
+        selected_menu = render_sidebar()
+        controller = AttendanceController()
+        
+        try:
+            if selected_menu == "📊 Dashboard":
+                controller.run_dashboard()
+            elif selected_menu == "📝 Submit Report":
+                controller.run_report_form()
+            elif selected_menu == "⚙️ Settings":
+                render_settings_page()
+            
+            load_time = performance_monitor.end_timer('app_load')
+            if load_time > 0:
+                st.sidebar.caption(f"⏱️ Load time: {load_time:.2f}s")
+        
+        except Exception as e:
+            st.error(f"⚠️ Application Error: {str(e)}")
+            st.exception(e)
+            
+            if st.button("🔄 Reload Application"):
+                st.rerun()
+
+# ================================================================================
+# APPLICATION EXECUTION
+# ================================================================================
+
+if __name__ == "__main__":
+    main()
 
 
 # ================================================================================
