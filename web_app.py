@@ -3276,6 +3276,8 @@ def render_login_page():
                     st.error("❌ Username atau Password salah!")
                     
         st.markdown('</div>', unsafe_allow_html=True)
+
+
 def main() -> None:
     """
     Main application entry point.
@@ -3332,14 +3334,6 @@ def main() -> None:
             
             if st.button("🔄 Reload Application"):
                 st.rerun()
-
-# ================================================================================
-# APPLICATION EXECUTION
-# ================================================================================
-
-if __name__ == "__main__":
-    main()
-
 
 # ================================================================================
 # APPLICATION EXECUTION
