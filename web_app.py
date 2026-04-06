@@ -152,7 +152,7 @@ class DataSourceConfig:
     ATTENDANCE_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ_GhoIb1riX98FsP8W4f2-_dH_PLcLDZskjNOyDcnnvOhBg8FUp3xJ-c_YgV0Pw71k4STy4rR0_MS5/pub?gid=1877240181&single=true&output=csv"
     
     # YANG INI BIARKAN SAJA:
-    STATUS_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ2QrBN8uTRiHINCEcZBrbdU-gzJ4pN2UljoqYG6NMoUQIK02yj_D1EdlxdPr82Pbr94v2o6V0Vh3Kt/pub?gid=511860805&single=true&output=csv"
+    STATUS_SHEET_URL = "https://docs.google.com/spreadsheets/d/1gaRK7hjjL26NSzkC3YPJ-LUaNlYTmpi0N9KX8awdq2g/export?format=csv"
     # Google Forms
     REPORT_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeopdaE-lyOtFd2TUr5C3K2DWE3Syt2PaKoXMp0cmWKIFnijw/viewform?usp=header"
     
