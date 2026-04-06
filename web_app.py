@@ -2562,11 +2562,15 @@ class AttendanceController:
                         ]
                         creds_dict = dict(st.secrets["gcp_service_account"])
                         creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
-                        robot_email = creds.service_account_email # Tangkap email yang lagi jalan
+                        robot_email = creds.service_account_email
                         client = gspread.authorize(creds)
                         
-                        # --- BUKA SPREADSHEET BARU ---
-                        sheet = client.open_by_key(target_id).worksheet("Sheet1")
+                        # --- BUKA SPREADSHEET (JALUR VIP ANTI GAGAL) ---
+                        # Kita pakai URL full biar nggak nyasar!
+                        target_url = "https://docs.google.com/spreadsheets/d/1gaRK7hjjL26NSzkC3YPJ-LUaNlYTmpi0N9KX8awdq2g/edit"
+                        
+                        # Pakai .sheet1 otomatis memaksa robot ngambil Tab paling pertama, tanpa peduli namanya apa (Sheet1/Lembar1 bebas!)
+                        sheet = client.open_by_url(target_url).sheet1
                         
                         # --- TEMBAK DATA ---
                         sheet.append_rows(records_to_save)
@@ -2576,6 +2580,9 @@ class AttendanceController:
                         # Bersihkan tabel
                         st.session_state['input_data'] = pd.DataFrame(columns=['Nama Karyawan', 'Keterangan'])
                         st.rerun()
+                        
+                    except Exception as e:
+                        st.error(f"❌ Gagal mengirim data: {str(e)}")
                         
                     except Exception as e:
                         st.error(f"❌ Gagal mengirim data ke Google Sheets: {str(e)}")
