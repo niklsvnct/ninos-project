@@ -2482,38 +2482,41 @@ class AttendanceController:
         st.markdown('<div class="brand-title">INPUT PERIZINAN</div>', unsafe_allow_html=True)
         st.markdown('<div class="brand-subtitle">SUBMIT STATUS IZIN KARYAWAN</div>', unsafe_allow_html=True)
         
-        st.info("📝 Isi tabel di bawah")
+        st.info("📝 **Instruksi:** Pilih Unit Pelapor, lalu isi tabel di bawah. Untuk izin lebih dari 1 hari, tentukan **Tanggal Mulai** dan **Tanggal Selesai** pada baris yang sama.")
         
+        # Inisialisasi History jika belum ada
         if 'history_input' not in st.session_state:
             st.session_state['history_input'] = []
 
-        # --- REVISI 1: PELAPOR JADI DAFTAR UNIT/DIVISI ---
-        # Mengambil otomatis dari konfigurasi divisimu (sudah ada 14 unit termasuk SPT & SPV)
-        daftar_divisi = list(DivisionRegistry.get_all().keys())
+        # --- 1. DEFINISI DAFTAR UNIT (PELAPOR) ---
+        # Diambil otomatis dari daftar divisi yang sudah didaftarkan (SPT, ATS, AVSEC, dll)
+        daftar_unit = list(DivisionRegistry.get_all().keys())
+        
         pelapor = st.selectbox(
             "🕵️‍♂️ Nama Pelapor (Siapa yang submit data ini?)", 
-            ["-- Pilih Unit/Posisi --"] + daftar_divisi,
-            help="Pilih unit atau posisi pelapor."
+            ["-- Pilih Unit/Posisi --"] + daftar_unit,
+            help="Pilih unit atau posisi pelapor yang bertanggung jawab atas input ini."
         )
 
-        # Filter Divisi untuk mempermudah cari nama di tabel
+        # Filter untuk memudahkan mencari nama karyawan di tabel
         semua_nama = DivisionRegistry.get_all_members()
-        selected_div = st.selectbox("🏢 Filter Unit)", ["Semua Divisi"] + daftar_unit)
+        selected_filter_div = st.selectbox("🏢 Filter Karyawan Berdasarkan Unit (Opsional)", ["Semua Divisi"] + daftar_unit)
             
-        if selected_div == "Semua Divisi":
+        if selected_filter_div == "Semua Divisi":
             available_names = semua_nama
         else:
-            available_names = DivisionRegistry.get(selected_div).members
+            available_names = DivisionRegistry.get(selected_filter_div).members
 
         st.markdown("### 📋 Tabel Input Status")
         
-        # --- REVISI 2: KOLOM TANGGAL PINDAH KE DALAM TABEL ---
-        # Reset dataframe di session_state jika kolomnya belum ada Tanggal Mulai/Selesai
+        # --- 2. KONFIGURASI KOLOM TABEL ---
+        # Inisialisasi session state untuk data tabel jika belum ada
         if 'input_data' not in st.session_state or 'Tanggal Mulai' not in st.session_state['input_data'].columns:
             st.session_state['input_data'] = pd.DataFrame(columns=['Nama Karyawan', 'Keterangan', 'Tanggal Mulai', 'Tanggal Selesai'])
             
         status_options = ['CR', 'SKD', 'OFF', 'IZIN', 'SAKIT', 'DL', 'CUTI']
         
+        # Editor Tabel
         edited_df = st.data_editor(
             st.session_state['input_data'],
             column_config={
@@ -2548,9 +2551,10 @@ class AttendanceController:
         
         st.markdown("<br>", unsafe_allow_html=True)
         
+        # Tombol Aksi
         col_btn1, col_btn2 = st.columns([3, 1])
         with col_btn1:
-            submit_btn = st.button("SUBMIT DATA KE SERVER", use_container_width=True)
+            submit_btn = st.button("🚀 SUBMIT DATA KE SERVER", use_container_width=True)
         with col_btn2:
             reset_btn = st.button("🗑️ RESET TABEL", use_container_width=True)
             
@@ -2558,42 +2562,40 @@ class AttendanceController:
             st.session_state['input_data'] = pd.DataFrame(columns=['Nama Karyawan', 'Keterangan', 'Tanggal Mulai', 'Tanggal Selesai'])
             st.rerun()
             
+        # --- 3. LOGIKA SUBMIT ---
         if submit_btn:
+            # Bersihkan baris yang kosong
             clean_df = edited_df.dropna(subset=['Nama Karyawan', 'Keterangan', 'Tanggal Mulai', 'Tanggal Selesai']).copy()
             
-            # --- VALIDASI ---
             if pelapor == "-- Pilih Unit/Posisi --":
-                st.error("❌ ERROR: Tolong pilih Nama Pelapor (Unit/Posisi) di bagian atas sebelum submit!")
+                st.error("❌ **ERROR:** Mohon pilih **Unit Pelapor** sebelum menekan tombol Submit!")
             elif clean_df.empty:
-                st.warning("⚠️ Tabel masih kosong atau ada baris yang isiannya belum lengkap!")
+                st.warning("⚠️ **Tabel Kosong:** Tidak ada data valid untuk dikirim.")
             else:
-                with st.spinner("Menyimpan data perizinan ke Google Sheets..."):
+                with st.spinner("Sedang memproses data dan mengirim ke Google Sheets..."):
                     import gspread
                     from google.oauth2.service_account import Credentials
                     
                     records_to_save = []
                     timestamp = datetime.now().strftime(AppConstants.DATETIME_FORMAT)
-                    
                     is_error_date = False
                     
-                    # --- LOGIKA TANGGAL PER BARIS ---
+                    # Looping setiap baris di tabel untuk memecah rentang tanggal
                     for _, row in clean_df.iterrows():
                         try:
-                            # Memastikan format tanggal aman
                             start_date = pd.to_datetime(row['Tanggal Mulai']).date()
                             end_date = pd.to_datetime(row['Tanggal Selesai']).date()
                         except:
-                            st.error(f"❌ Format tanggal salah untuk {row['Nama Karyawan']}.")
+                            st.error(f"❌ Format tanggal tidak valid untuk {row['Nama Karyawan']}.")
                             is_error_date = True
                             break
                             
-                        # Mencegah human error (tanggal kebalik)
                         if end_date < start_date:
-                            st.error(f"❌ ERROR: Tanggal Selesai untuk **{row['Nama Karyawan']}** tidak boleh lebih awal dari Tanggal Mulai!")
+                            st.error(f"❌ **Tanggal Terbalik:** {row['Nama Karyawan']} memiliki Tanggal Selesai sebelum Tanggal Mulai!")
                             is_error_date = True
                             break
                             
-                        # Looping pecah tanggal per hari untuk dikirim ke Sheets
+                        # Pecah rentang menjadi baris harian
                         curr_date = start_date
                         while curr_date <= end_date:
                             records_to_save.append([
@@ -2601,13 +2603,13 @@ class AttendanceController:
                                 curr_date.strftime(AppConstants.DATE_FORMAT),
                                 row['Nama Karyawan'],
                                 row['Keterangan'],
-                                pelapor
+                                pelapor # Menyimpan siapa yang submit (Unit)
                             ])
                             curr_date += timedelta(days=1)
                     
-                    # Jika lolos semua validasi tanggal
                     if not is_error_date:
                         try:
+                            # Koneksi Google Sheets
                             scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
                             creds_dict = dict(st.secrets["gcp_service_account"])
                             creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
@@ -2616,29 +2618,41 @@ class AttendanceController:
                             target_url = "https://docs.google.com/spreadsheets/d/1gaRK7hjjL26NSzkC3YPJ-LUaNIYTmpi0N9KX8awdq2g/edit?hl=id&gid=0#gid=0"
                             sheet = client.open_by_url(target_url).sheet1
                             
-                            # Tembak semua data (yang sudah dipecah per hari) ke Sheets
+                            # Kirim data
                             sheet.append_rows(records_to_save)
                             
-                            # --- SIMPAN HISTORY ---
+                            # Simpan ke History Session
                             st.session_state['history_input'].insert(0, {
                                 "waktu": timestamp,
                                 "pelapor": pelapor,
                                 "data": clean_df.to_dict('records')
                             })
                             
-                            # Batasi history max 5
                             if len(st.session_state['history_input']) > 5:
                                 st.session_state['history_input'].pop()
                                 
-                            st.success(f"✅ Berhasil menyimpan total {len(records_to_save)} hari perizinan ke Database!")
+                            st.success(f"✅ Berhasil! {len(records_to_save)} entri data telah disimpan.")
                             
-                            # Bersihkan form
+                            # Reset tabel setelah sukses
                             st.session_state['input_data'] = pd.DataFrame(columns=['Nama Karyawan', 'Keterangan', 'Tanggal Mulai', 'Tanggal Selesai'])
                             time.sleep(1.5)
                             st.rerun()
                             
                         except Exception as e:
-                            st.error(f"❌ Gagal mengirim data: {str(e)}")
+                            st.error(f"❌ **Gagal Sistem:** {str(e)}")
+
+        # --- 4. TAMPILAN RIWAYAT (HISTORY) ---
+        if len(st.session_state.get('history_input', [])) > 0:
+            st.markdown("---")
+            st.markdown("### 🕒 Riwayat Input Terakhir (Sesi Ini)")
+            for hist in st.session_state['history_input']:
+                with st.expander(f"📦 Unit: {hist['pelapor']} | Waktu: {hist['waktu']}"):
+                    h_df = pd.DataFrame(hist['data'])
+                    if not h_df.empty:
+                        # Format tanggal agar enak dibaca di riwayat
+                        h_df['Tanggal Mulai'] = pd.to_datetime(h_df['Tanggal Mulai']).dt.strftime('%d-%b-%Y')
+                        h_df['Tanggal Selesai'] = pd.to_datetime(h_df['Tanggal Selesai']).dt.strftime('%d-%b-%Y')
+                        st.dataframe(h_df, hide_index=True, use_container_width=True)
 
         # --- SECTION TAMPILAN HISTORY ---
         if len(st.session_state.get('history_input', [])) > 0:
