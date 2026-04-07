@@ -3481,7 +3481,8 @@ def render_login_page():
         
         if submit:
             with st.spinner("Verifying credentials..."):
-                time.sleep(0.8) 
+                import time as tm  # Kita panggil dengan nama 'tm' agar tidak bentrok
+                tm.sleep(0.8) 
                 
                 valid_users = {
                     "admin": "admin123",
@@ -3494,7 +3495,7 @@ def render_login_page():
                     st.session_state['authenticated'] = True
                     st.session_state['current_user'] = username.upper()
                     st.success("✅ Authentication successful! Redirecting...")
-                    time.sleep(1)
+                    tm.sleep(1) # Ganti time.sleep jadi tm.sleep
                     st.rerun()
                 else:
                     st.error("❌ Invalid credentials. Please try again.")
