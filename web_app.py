@@ -3215,65 +3215,117 @@ def render_settings_page() -> None:
         )
 
 def render_login_page():
-    """Render custom login page matching the provided design."""
+    """Render custom login page with a professional, centralized card design."""
     st.markdown("""
     <style>
-        /* Background halaman login */
+        /* 1. Background halaman login */
         .stApp {
-            background: linear-gradient(rgba(20, 25, 35, 0.85), rgba(20, 25, 35, 0.95)), url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=2074&auto=format&fit=crop') no-repeat center center fixed;
+            background: linear-gradient(rgba(11, 14, 20, 0.8), rgba(11, 14, 20, 0.9)),
+                        url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=2074&auto=format&fit=crop') no-repeat center center fixed;
             background-size: cover;
         }
-        /* Hilangkan sidebar di halaman login */
-        [data-testid="stSidebar"] { display: none; }
-        
-        /* Styling Kotak Putih */
-        .login-card {
-            background-color: #f8f9fa;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            text-align: center;
-            margin-top: 10vh;
+
+        /* 2. Sembunyikan elemen bawaan Streamlit yang mengganggu */
+        [data-testid="stSidebar"], [data-testid="stHeader"] {
+            display: none;
         }
-        .login-title { font-family: 'Inter', sans-serif; font-size: 2rem; font-weight: 800; color: #1e2530; margin-bottom: 5px; }
-        .login-subtitle { font-size: 0.9rem; color: #546e7a; margin-bottom: 30px; }
-        
-        /* Styling Tombol Biru */
-        .stFormSubmitButton button { background-color: #0d6efd !important; color: white !important; border: none !important; width: 100% !important; border-radius: 6px !important; font-weight: bold !important; padding: 10px !important; letter-spacing: 1px !important; }
-        .stFormSubmitButton button:hover { background-color: #0b5ed7 !important; }
-        .stTextInput input { background-color: white !important; color: #1e2530 !important; border: 1px solid #ced4da !important; }
+
+        /* 3. Pusatkan konten ke tengah layar */
+        .block-container {
+            padding-top: 12vh !important;
+            max-width: 450px !important;
+        }
+
+        /* 4. Styling khusus untuk Form Container agar menjadi Card Utama */
+        [data-testid="stForm"] {
+            background-color: rgba(255, 255, 255, 0.98);
+            padding: 40px 30px;
+            border-radius: 16px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        /* 5. Custom font & warna teks di dalam card */
+        [data-testid="stForm"] * {
+            color: #1e2530 !important;
+        }
+
+        /* 6. Input text field styling */
+        [data-testid="stForm"] .stTextInput input {
+            background-color: #f8f9fa !important;
+            border: 2px solid #e9ecef !important;
+            border-radius: 8px !important;
+            padding: 12px 15px !important;
+            color: #1e2530 !important;
+            transition: all 0.3s ease;
+        }
+        [data-testid="stForm"] .stTextInput input:focus {
+            border-color: #00a8ff !important;
+            box-shadow: 0 0 0 3px rgba(0, 168, 255, 0.15) !important;
+            background-color: #ffffff !important;
+        }
+
+        /* 7. Button styling yang lebih elegan & konsisten dengan tema utama */
+        [data-testid="stForm"] .stFormSubmitButton button {
+            background: linear-gradient(135deg, #00a8ff, #00cec9) !important;
+            color: white !important;
+            border: none !important;
+            width: 100% !important;
+            border-radius: 8px !important;
+            padding: 12px !important;
+            font-weight: 800 !important;
+            font-size: 1.1rem !important;
+            letter-spacing: 1.5px !important;
+            text-transform: uppercase !important;
+            margin-top: 15px !important;
+            box-shadow: 0 4px 15px rgba(0, 168, 255, 0.3) !important;
+            transition: all 0.3s ease !important;
+        }
+        [data-testid="stForm"] .stFormSubmitButton button:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 6px 20px rgba(0, 168, 255, 0.4) !important;
+        }
+
+        /* Alert jaraknya disesuaikan */
+        .stAlert { margin-top: 15px; }
+
     </style>
     """, unsafe_allow_html=True)
 
-    col1, col2, col3 = st.columns([1, 1.2, 1])
+    # Bagian Header/Logo di luar kotak (menyatu dengan background gelap)
+    st.markdown("""
+    <div style="text-align: center; margin-bottom: 25px;">
+        <div style="font-size: 3.5rem; margin-bottom: 5px;">✈️</div>
+        <h1 style="font-family: 'Rajdhani', sans-serif; font-size: 2.5rem; font-weight: 800; color: #ffffff; margin: 0; text-shadow: 0 4px 10px rgba(0,0,0,0.5);">WedaBay Airport</h1>
+        <p style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #00cec9; letter-spacing: 2px; text-transform: uppercase; margin-top: 5px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">Absence Center System</p>
+    </div>
+    """, unsafe_allow_html=True)
 
-    with col2:
-        st.markdown('<div class="login-card">', unsafe_allow_html=True)
-        st.markdown('<div class="login-title">Weda Bay Airport</div>', unsafe_allow_html=True)
-        st.markdown('<div class="login-subtitle">Absence Center Management System</div>', unsafe_allow_html=True)
+    # Form Login Utama
+    with st.form("login_form", clear_on_submit=False):
+        st.markdown("<h3 style='text-align: center; margin-bottom: 25px; font-weight: 800; color: #2d3436 !important;'>SECURE LOGIN</h3>", unsafe_allow_html=True)
 
-        with st.form("login_form", clear_on_submit=False):
-            username = st.text_input("Username", placeholder="Username", label_visibility="collapsed")
-            password = st.text_input("Password", type="password", placeholder="Password", label_visibility="collapsed")
-            
-            st.markdown("<br>", unsafe_allow_html=True)
-            submit = st.form_submit_button("SIGN IN")
+        username = st.text_input("Username", placeholder="Enter Username", label_visibility="collapsed")
+        password = st.text_input("Password", type="password", placeholder="Enter Password", label_visibility="collapsed")
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        submit = st.form_submit_button("SIGN IN")
 
-            if submit:
-                # --- DAFTAR 4 AKUN ---
-                valid_users = {
-                    "admin": "admin123",
-                    "kaban": "kaban2026",
-                    "spt_spv": "spt2026",
-                    "koordinator": "koor2026"
-                }
+        if submit:
+            # --- DAFTAR 4 AKUN ---
+            valid_users = {
+                "admin": "admin123",
+                "kaban": "kaban2026",
+                "spt_spv": "spt2026",
+                "koordinator": "koor2026"
+            }
 
-                if username.lower() in valid_users and valid_users[username.lower()] == password:
-                    st.session_state['authenticated'] = True
-                    st.session_state['current_user'] = username.upper()
-                    st.rerun()
-                else:
-                    st.error("❌ Username atau Password salah!")
+            if username.lower() in valid_users and valid_users[username.lower()] == password:
+                st.session_state['authenticated'] = True
+                st.session_state['current_user'] = username.upper()
+                st.rerun()
+            else:
+                st.error("❌ Invalid Credentials. Please try again.")
                     
         st.markdown('</div>', unsafe_allow_html=True)
 
