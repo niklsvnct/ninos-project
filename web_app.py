@@ -3239,6 +3239,8 @@ def set_local_background(image_file):
             .stApp { background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%) !important; }
             </style>
         """, unsafe_allow_html=True)
+
+
 def render_login_page():
     """Render a premium, professional login page with modern UX/UI design."""
     
@@ -3246,7 +3248,7 @@ def render_login_page():
     # Ganti "bg_bandara.jpg" dengan nama file gambar yang kamu upload di GitHub!
     set_local_background("bg_bandara.jpg") 
     
-    # 2️⃣ Inject Premium CSS (Bagian .stApp sudah dipindah ke fungsi di atas)
+    # 2️⃣ Inject Premium CSS dengan Efek Glassmorphism
     st.markdown("""
     <style>
         /* ===== GLOBAL RESET & TYPOGRAPHY ===== */
@@ -3268,32 +3270,8 @@ def render_login_page():
             max-width: 550px !important;
             margin: 0 auto !important;
         }
-        
-        /* ===== LOGIN CARD ===== */
-        [data-testid="stForm"] {
-            background: #ffffff !important;
-            padding: 40px !important;
-            border-radius: 20px !important;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4) !important;
-            border: none !important;
-            animation: cardSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        
-        /* PAKSA WARNA TEKS DALAM KOTAK */
-        [data-testid="stForm"] p, 
-        [data-testid="stForm"] span, 
-        [data-testid="stForm"] div, 
-        [data-testid="stForm"] label,
-        [data-testid="stForm"] h2 {
-            color: #1e293b !important;
-        }
-        
-        @keyframes cardSlideIn {
-            from { opacity: 0; transform: translateY(30px) scale(0.98); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        
-        /* ===== BRAND HEADER ===== */
+
+        /* ===== BRAND HEADER (DI LUAR KOTAK) ===== */
         .brand-header {
             text-align: center;
             margin-bottom: 30px;
@@ -3339,13 +3317,37 @@ def render_login_page():
             margin-top: 10px;
             font-weight: 400;
         }
+
+        /* ===== LOGIN CARD (KOTA LOGIN) - GLASSMORPHISM PERBAIKAN ===== */
+        [data-testid="stForm"] {
+            background-color: rgba(255, 255, 255, 0.08) !important; /* Putih super transparan */
+            backdrop-filter: blur(12px) !important; /* Efek buram 'kaca' di latar belakang */
+            padding: 40px !important;
+            border-radius: 20px !important;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3) !important; /* Shadow lebih halus */
+            border: 1px solid rgba(255, 255, 255, 0.1) !important; /* Border tipis transparan untuk definisi */
+            animation: cardSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
         
-        /* ===== FORM TITLE ===== */
+        /* PAKSA SEMUA TEKS DI DALAM KOTAK MENJADI TERANG AGAR TERBACA */
+        [data-testid="stForm"] p, 
+        [data-testid="stForm"] span, 
+        [data-testid="stForm"] div, 
+        [data-testid="stForm"] label {
+            color: #ffffff !important; /* Teks terang/putih */
+        }
+        
+        @keyframes cardSlideIn {
+            from { opacity: 0; transform: translateY(30px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        
+        /* ===== FORM TITLE Di Dalam Kotak (SECURE ACCESS) - UBAH WARNA ===== */
         .form-title {
             text-align: center !important;
             font-size: 1.5rem !important;
             font-weight: 800 !important;
-            color: #0f172a !important;
+            color: #ffffff !important; /* Paksa warna putih di latar belakang transparan */
             margin: 0 0 25px 0 !important;
             position: relative;
             padding-bottom: 15px;
@@ -3363,34 +3365,30 @@ def render_login_page():
             border-radius: 4px;
         }
         
-        /* ===== INPUT FIELDS ===== */
-        [data-testid="stForm"] .stTextInput {
-            margin-bottom: 20px;
-        }
-        
+        /* ===== INPUT FIELDS - PENYESUAIAN WARNA ===== */
         [data-testid="stForm"] .stTextInput input {
-            background-color: #f8fafc !important;
-            border: 2px solid #cbd5e1 !important;
+            background-color: rgba(248, 250, 252, 0.2) !important; /* Input agak transparan */
+            border: 1px solid rgba(203, 213, 225, 0.3) !important;
             border-radius: 10px !important;
             padding: 15px 18px !important;
             font-size: 1rem !important;
-            color: #0f172a !important;
+            color: #ffffff !important; /* Teks input putih agar terbaca di dalam transparan */
             width: 100% !important;
             font-family: 'Inter', sans-serif !important;
         }
         
         [data-testid="stForm"] .stTextInput input:focus {
             border-color: #0ea5e9 !important;
-            background-color: #ffffff !important;
+            background-color: rgba(255, 255, 255, 0.3) !important;
             box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2) !important;
         }
         
         [data-testid="stForm"] .stTextInput input::placeholder {
-            color: #64748b !important;
+            color: rgba(255, 255, 255, 0.6) !important; /* Placeholder putih samar */
             opacity: 1 !important;
         }
         
-        /* ===== BUTTON STYLING ===== */
+        /* ===== BUTTON STYLING - TETAP SOLID BIRU ===== */
         [data-testid="stForm"] .stFormSubmitButton button {
             background: #0ea5e9 !important;
             color: white !important;
@@ -3413,7 +3411,7 @@ def render_login_page():
             box-shadow: 0 6px 20px rgba(14, 165, 233, 0.6) !important;
         }
         
-        /* ===== UTILITY ELEMENTS ===== */
+        /* ===== UTILITY ELEMENTS (REMEMBER ME / FORGOT PASS) - UBAH WARNA ===== */
         .form-options {
             display: flex;
             justify-content: space-between;
@@ -3422,24 +3420,23 @@ def render_login_page():
             font-size: 0.95rem;
         }
         
-        .form-options span, .form-options a {
-            color: #475569 !important;
+        .form-options span, .form-options label {
+            color: #ffffff !important; /* Warna teks terang */
             font-weight: 500;
         }
         
         .form-options a {
-            color: #0ea5e9 !important;
+            color: #38bdf8 !important; /* Link biru muda agar terlihat di transparan */
             text-decoration: none;
             font-weight: 600;
         }
         
-        /* ===== FOOTER ===== */
+        /* ===== FOOTER DI DALAM KOTAK - UBAH WARNA ===== */
         .login-footer {
             text-align: center;
             margin-top: 30px;
             font-size: 0.85rem;
-            color: #94a3b8 !important;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+            color: #cbd5e1 !important; /* Abu-abu terang agar menyatu */
         }
     </style>
     """, unsafe_allow_html=True)
