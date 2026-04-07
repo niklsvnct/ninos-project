@@ -3226,8 +3226,8 @@ def render_login_page():
         * { box-sizing: border-box; }
         
         .stApp {
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
-            background-attachment: fixed;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%) !important;
+            background-attachment: fixed !important;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
         }
         
@@ -3236,54 +3236,50 @@ def render_login_page():
         [data-testid="stHeader"], 
         .stDeployButton { display: none !important; }
         
-        /* Center content container */
+        /* Center content container - DIPERLEBAR AGAR TIDAK KEPOTONG */
         .block-container {
-            padding-top: 8vh !important;
+            padding-top: 6vh !important;
             padding-bottom: 0 !important;
-            max-width: 480px !important;
+            max-width: 550px !important; /* Diperlebar dari 480px ke 550px */
             margin: 0 auto !important;
         }
         
         /* ===== LOGIN CARD ===== */
         [data-testid="stForm"] {
-            background: linear-gradient(145deg, rgba(255,255,255,0.98), rgba(248,250,252,0.95));
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            padding: 48px 40px 40px;
-            border-radius: 24px;
-            box-shadow: 
-                0 25px 50px -12px rgba(0, 0, 0, 0.6),
-                0 0 0 1px rgba(255, 255, 255, 0.1),
-                inset 0 1px 0 rgba(255, 255, 255, 0.6);
-            border: 1px solid rgba(226, 232, 240, 0.8);
+            background: #ffffff !important; /* Paksa warna solid putih */
+            padding: 40px !important;
+            border-radius: 20px !important;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4) !important;
+            border: none !important;
             animation: cardSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
         
-        @keyframes cardSlideIn {
-            from { 
-                opacity: 0; 
-                transform: translateY(30px) scale(0.98); 
-            }
-            to { 
-                opacity: 1; 
-                transform: translateY(0) scale(1); 
-            }
+        /* PAKSA SEMUA TEKS DI DALAM KOTAK JADI GELAP (Mencegah bug Dark Mode Streamlit) */
+        [data-testid="stForm"] p, 
+        [data-testid="stForm"] span, 
+        [data-testid="stForm"] div, 
+        [data-testid="stForm"] label,
+        [data-testid="stForm"] h2 {
+            color: #1e293b !important;
         }
         
-        /* ===== BRAND HEADER ===== */
+        @keyframes cardSlideIn {
+            from { opacity: 0; transform: translateY(30px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        
+        /* ===== BRAND HEADER (DI LUAR KOTAK) ===== */
         .brand-header {
             text-align: center;
-            margin-bottom: 32px;
-            padding-bottom: 24px;
-            border-bottom: 1px solid rgba(203, 213, 225, 0.5);
+            margin-bottom: 30px;
         }
         
         .brand-icon {
-            font-size: 3.8rem;
-            margin-bottom: 8px;
+            font-size: 4rem;
+            margin-bottom: 5px;
             display: inline-block;
             animation: floatIcon 3s ease-in-out infinite;
-            filter: drop-shadow(0 4px 12px rgba(0, 168, 255, 0.4));
+            filter: drop-shadow(0 4px 10px rgba(0, 168, 255, 0.5));
         }
         
         @keyframes floatIcon {
@@ -3293,43 +3289,40 @@ def render_login_page():
         
         .brand-title {
             font-family: 'Inter', sans-serif;
-            font-size: 2.1rem;
+            font-size: 2.2rem;
             font-weight: 800;
-            color: #0f172a;
-            margin: 0 0 6px 0;
-            letter-spacing: -0.5px;
-            background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: #ffffff !important; /* Paksa putih agar terlihat di background gelap */
+            margin: 0 0 5px 0;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
         
         .brand-subtitle {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.82rem;
-            color: #0ea5e9;
+            font-size: 0.9rem;
+            color: #38bdf8 !important; /* Biru terang */
             font-weight: 600;
-            letter-spacing: 2.5px;
+            letter-spacing: 3px;
             text-transform: uppercase;
             margin: 0;
-            opacity: 0.9;
         }
         
         .brand-tagline {
             font-size: 0.9rem;
-            color: #64748b;
-            margin-top: 12px;
+            color: #94a3b8 !important;
+            margin-top: 10px;
             font-weight: 400;
         }
         
         /* ===== FORM TITLE ===== */
         .form-title {
-            text-align: center;
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: #1e293b;
-            margin: 0 0 28px 0;
+            text-align: center !important;
+            font-size: 1.5rem !important;
+            font-weight: 800 !important;
+            color: #0f172a !important; /* Gelap pekat */
+            margin: 0 0 25px 0 !important;
             position: relative;
-            padding-bottom: 12px;
+            padding-bottom: 15px;
         }
         
         .form-title::after {
@@ -3338,200 +3331,93 @@ def render_login_page():
             bottom: 0;
             left: 50%;
             transform: translateX(-50%);
-            width: 60px;
-            height: 3px;
-            background: linear-gradient(90deg, #0ea5e9, #22d3ee);
-            border-radius: 3px;
+            width: 50px;
+            height: 4px;
+            background: #0ea5e9;
+            border-radius: 4px;
         }
         
         /* ===== INPUT FIELDS ===== */
         [data-testid="stForm"] .stTextInput {
-            margin-bottom: 18px;
+            margin-bottom: 20px;
         }
         
         [data-testid="stForm"] .stTextInput input {
-            background: #f8fafc !important;
-            border: 2px solid #e2e8f0 !important;
-            border-radius: 12px !important;
-            padding: 14px 18px !important;
-            font-size: 0.95rem !important;
-            color: #1e293b !important;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            background-color: #f8fafc !important; /* Abu-abu sangat terang */
+            border: 2px solid #cbd5e1 !important;
+            border-radius: 10px !important;
+            padding: 15px 18px !important;
+            font-size: 1rem !important;
+            color: #0f172a !important; /* Teks input gelap */
+            width: 100% !important;
             font-family: 'Inter', sans-serif !important;
         }
         
         [data-testid="stForm"] .stTextInput input:focus {
             border-color: #0ea5e9 !important;
-            box-shadow: 
-                0 0 0 4px rgba(14, 165, 233, 0.15),
-                0 4px 12px rgba(14, 165, 233, 0.1) !important;
-            background: #ffffff !important;
-            transform: translateY(-1px);
+            background-color: #ffffff !important;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2) !important;
         }
         
         [data-testid="stForm"] .stTextInput input::placeholder {
-            color: #94a3b8 !important;
-            opacity: 1;
+            color: #64748b !important; /* Warna placeholder abu-abu gelap */
+            opacity: 1 !important;
         }
         
         /* ===== BUTTON STYLING ===== */
         [data-testid="stForm"] .stFormSubmitButton button {
-            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 50%, #0369a1 100%) !important;
+            background: #0ea5e9 !important;
             color: white !important;
             border: none !important;
             width: 100% !important;
-            border-radius: 12px !important;
-            padding: 15px 24px !important;
-            font-weight: 700 !important;
-            font-size: 1rem !important;
-            letter-spacing: 0.5px !important;
+            border-radius: 10px !important;
+            padding: 16px 20px !important;
+            font-weight: 800 !important;
+            font-size: 1.05rem !important;
+            letter-spacing: 1px !important;
             text-transform: uppercase;
-            margin-top: 8px !important;
-            cursor: pointer !important;
-            box-shadow: 
-                0 4px 14px rgba(14, 165, 233, 0.4),
-                0 2px 4px rgba(0, 0, 0, 0.1) !important;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-            position: relative;
-            overflow: hidden;
-            font-family: 'Inter', sans-serif !important;
-        }
-        
-        [data-testid="stForm"] .stFormSubmitButton button::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
-            transition: left 0.5s;
+            margin-top: 10px !important;
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4) !important;
+            transition: all 0.3s ease !important;
         }
         
         [data-testid="stForm"] .stFormSubmitButton button:hover {
+            background: #0284c7 !important;
             transform: translateY(-2px);
-            box-shadow: 
-                0 8px 25px rgba(14, 165, 233, 0.55),
-                0 4px 8px rgba(0, 0, 0, 0.15) !important;
+            box-shadow: 0 6px 20px rgba(14, 165, 233, 0.6) !important;
         }
         
-        [data-testid="stForm"] .stFormSubmitButton button:hover::before {
-            left: 100%;
-        }
-        
-        [data-testid="stForm"] .stFormSubmitButton button:active {
-            transform: translateY(0);
-        }
-        
-        [data-testid="stForm"] .stFormSubmitButton button:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-            transform: none !important;
-        }
-        
-        /* ===== UTILITY ELEMENTS ===== */
+        /* ===== UTILITY ELEMENTS (REMEMBER ME) ===== */
         .form-options {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin: 16px 0 24px;
-            font-size: 0.9rem;
+            margin: 10px 0 25px;
+            font-size: 0.95rem;
         }
         
-        .remember-me {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: #475569;
+        .form-options span, .form-options a {
+            color: #475569 !important;
             font-weight: 500;
-            cursor: pointer;
         }
         
-        .remember-me input {
-            width: 16px;
-            height: 16px;
-            accent-color: #0ea5e9;
-            cursor: pointer;
-        }
-        
-        .forgot-link {
-            color: #0ea5e9;
+        .form-options a {
+            color: #0ea5e9 !important;
             text-decoration: none;
             font-weight: 600;
-            transition: color 0.2s;
-        }
-        
-        .forgot-link:hover {
-            color: #0284c7;
-            text-decoration: underline;
-        }
-        
-        /* ===== ALERT STYLING ===== */
-        .stAlert {
-            border-radius: 12px !important;
-            border: none !important;
-            margin-top: 20px !important;
-            font-weight: 500 !important;
-            animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
-        }
-        
-        @keyframes shake {
-            10%, 90% { transform: translateX(-2px); }
-            20%, 80% { transform: translateX(4px); }
-            30%, 50%, 70% { transform: translateX(-8px); }
-            40%, 60% { transform: translateX(8px); }
         }
         
         /* ===== FOOTER ===== */
         .login-footer {
             text-align: center;
-            margin-top: 28px;
-            padding-top: 20px;
-            border-top: 1px solid rgba(203, 213, 225, 0.4);
+            margin-top: 30px;
             font-size: 0.85rem;
-            color: #64748b;
+            color: #94a3b8 !important;
         }
-        
-        .login-footer a {
-            color: #0ea5e9;
-            text-decoration: none;
-            font-weight: 600;
-        }
-        
-        .login-footer a:hover {
-            text-decoration: underline;
-        }
-        
-        /* ===== RESPONSIVE ===== */
-        @media (max-width: 500px) {
-            .block-container { padding-top: 4vh !important; }
-            [data-testid="stForm"] { 
-                padding: 36px 28px 32px; 
-                margin: 0 16px;
-            }
-            .brand-title { font-size: 1.8rem; }
-            .brand-icon { font-size: 3.2rem; }
-        }
-        
-        /* ===== LOADING SPINNER (for button) ===== */
-        .btn-loading {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .spinner {
-            width: 18px;
-            height: 18px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 0.8s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
     """, unsafe_allow_html=True)
 
-    # 🔹 Brand Header (Outside Card)
+    # 🔹 Brand Header (Di Luar Kotak)
     st.markdown("""
     <div class="brand-header">
         <div class="brand-icon">✈️</div>
@@ -3543,12 +3429,12 @@ def render_login_page():
 
     # 🔹 Login Form Card
     with st.form("login_form", clear_on_submit=False):
-        st.markdown("<h2 class='form-title'>SECURE ACCESS</h2>", unsafe_allow_html=True)
+        st.markdown("<div class='form-title'>SECURE ACCESS</div>", unsafe_allow_html=True)
         
         # Username Input
         username = st.text_input(
             "Username", 
-            placeholder="••• Enter your username", 
+            placeholder="Username", 
             label_visibility="collapsed",
             key="login_username"
         )
@@ -3557,7 +3443,7 @@ def render_login_page():
         password = st.text_input(
             "Password", 
             type="password", 
-            placeholder="•••••••• Enter your password", 
+            placeholder="Password", 
             label_visibility="collapsed",
             key="login_password"
         )
@@ -3565,21 +3451,18 @@ def render_login_page():
         # Options: Remember Me + Forgot Password
         st.markdown("""
         <div class="form-options">
-            <label class="remember-me">
-                <input type="checkbox" id="remember"> Remember me
-            </label>
-            <a href="#" class="forgot-link">Forgot password?</a>
+            <span><input type="checkbox" style="accent-color:#0ea5e9;"> Remember me</span>
+            <a href="#">Forgot password?</a>
         </div>
         """, unsafe_allow_html=True)
         
         # Submit Button
-        submit = st.form_submit_button("🔐 SIGN IN TO DASHBOARD")
+        submit = st.form_submit_button("🔐 SIGN IN")
         
         # 🔹 Authentication Logic
         if submit:
-            # Show loading state (visual feedback)
             with st.spinner("Verifying credentials..."):
-                time.sleep(0.8)  # Simulate network delay for UX
+                time.sleep(0.8) 
                 
                 valid_users = {
                     "admin": "admin123",
@@ -3588,41 +3471,20 @@ def render_login_page():
                     "koordinator": "koor2026"
                 }
                 
-                # Case-insensitive username check
                 if username.lower() in valid_users and valid_users[username.lower()] == password:
                     st.session_state['authenticated'] = True
                     st.session_state['current_user'] = username.upper()
-                    st.session_state['login_time'] = time.time()
-                    
-                    # Success feedback before redirect
                     st.success("✅ Authentication successful! Redirecting...")
-                    time.sleep(1.2)
+                    time.sleep(1)
                     st.rerun()
                 else:
-                    st.error("❌ Invalid credentials. Please check your username and password.")
-                    # Optional: Add attempt tracking for security
-                    if 'login_attempts' not in st.session_state:
-                        st.session_state.login_attempts = 0
-                    st.session_state.login_attempts += 1
-                    
-                    if st.session_state.login_attempts >= 3:
-                        st.warning("⚠️ Too many failed attempts. Please try again later or contact support.")
+                    st.error("❌ Invalid credentials. Please try again.")
 
-    # 🔹 Professional Footer
+    # 🔹 Footer
     st.markdown("""
     <div class="login-footer">
-        <p>© 2026 WedaBay Airport • <a href="#">Privacy Policy</a> • <a href="#">Support</a></p>
-        <p style="margin-top:6px; font-size:0.8rem; opacity:0.8;">System v2.4.1 • Encrypted Connection 🔒</p>
+        <p>© 2026 WedaBay Airport • System v2.4.1</p>
     </div>
-    """, unsafe_allow_html=True)
-    
-    # 🔹 Optional: Auto-focus first input (enhanced UX)
-    st.markdown("""
-    <script>
-        // Auto-focus username field on load
-        const input = document.querySelector('input[placeholder*="username"]');
-        if (input) input.focus();
-    </script>
     """, unsafe_allow_html=True)
 
 def main() -> None:
