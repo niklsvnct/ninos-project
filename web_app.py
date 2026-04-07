@@ -3213,11 +3213,40 @@ def render_settings_page() -> None:
             value=False,
             help="Automatically archive reports older than 30 days"
         )
-
+def set_local_background(image_file):
+    try:
+        with open(image_file, "rb") as f:
+            encoded_string = base64.b64encode(f.read()).decode()
+        
+        # Inject CSS khusus untuk background
+        st.markdown(
+            f"""
+            <style>
+            .stApp {{
+                /* Efek gradasi gelap + Gambar lokal kamu */
+                background: linear-gradient(rgba(15, 23, 42, 0.75), rgba(15, 23, 42, 0.9)), 
+                            url("data:image/jpeg;base64,{encoded_string}") no-repeat center center fixed !important;
+                background-size: cover !important;
+            }}
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+    except FileNotFoundError:
+        # Kalau gambar gagal dimuat, pakai warna solid sebagai cadangan
+        st.markdown("""
+            <style>
+            .stApp { background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%) !important; }
+            </style>
+        """, unsafe_allow_html=True)
 def render_login_page():
     """Render a premium, professional login page with modern UX/UI design."""
     
-    # 🔹 Inject Premium CSS with Animations & Modern Styling
+    # 1️⃣ PANGGIL BACKGROUND KAMU DI SINI
+    # Ganti "bg_bandara.jpg" dengan nama file gambar yang kamu upload di GitHub!
+    set_local_background("bg_bandara.jpg") 
+    
+    # 2️⃣ Inject Premium CSS (Bagian .stApp sudah dipindah ke fungsi di atas)
     st.markdown("""
     <style>
         /* ===== GLOBAL RESET & TYPOGRAPHY ===== */
@@ -3225,28 +3254,24 @@ def render_login_page():
         
         * { box-sizing: border-box; }
         
-        .stApp {
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%) !important;
-            background-attachment: fixed !important;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
-        }
+        .stApp { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important; }
         
         /* Hide default Streamlit elements */
         [data-testid="stSidebar"], 
         [data-testid="stHeader"], 
         .stDeployButton { display: none !important; }
         
-        /* Center content container - DIPERLEBAR AGAR TIDAK KEPOTONG */
+        /* Center content container */
         .block-container {
             padding-top: 6vh !important;
             padding-bottom: 0 !important;
-            max-width: 550px !important; /* Diperlebar dari 480px ke 550px */
+            max-width: 550px !important;
             margin: 0 auto !important;
         }
         
         /* ===== LOGIN CARD ===== */
         [data-testid="stForm"] {
-            background: #ffffff !important; /* Paksa warna solid putih */
+            background: #ffffff !important;
             padding: 40px !important;
             border-radius: 20px !important;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4) !important;
@@ -3254,7 +3279,7 @@ def render_login_page():
             animation: cardSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
         
-        /* PAKSA SEMUA TEKS DI DALAM KOTAK JADI GELAP (Mencegah bug Dark Mode Streamlit) */
+        /* PAKSA WARNA TEKS DALAM KOTAK */
         [data-testid="stForm"] p, 
         [data-testid="stForm"] span, 
         [data-testid="stForm"] div, 
@@ -3268,7 +3293,7 @@ def render_login_page():
             to { opacity: 1; transform: translateY(0) scale(1); }
         }
         
-        /* ===== BRAND HEADER (DI LUAR KOTAK) ===== */
+        /* ===== BRAND HEADER ===== */
         .brand-header {
             text-align: center;
             margin-bottom: 30px;
@@ -3291,7 +3316,7 @@ def render_login_page():
             font-family: 'Inter', sans-serif;
             font-size: 2.2rem;
             font-weight: 800;
-            color: #ffffff !important; /* Paksa putih agar terlihat di background gelap */
+            color: #ffffff !important;
             margin: 0 0 5px 0;
             letter-spacing: 1px;
             text-shadow: 0 2px 4px rgba(0,0,0,0.5);
@@ -3300,16 +3325,17 @@ def render_login_page():
         .brand-subtitle {
             font-family: 'JetBrains Mono', monospace;
             font-size: 0.9rem;
-            color: #38bdf8 !important; /* Biru terang */
+            color: #38bdf8 !important;
             font-weight: 600;
             letter-spacing: 3px;
             text-transform: uppercase;
             margin: 0;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
         }
         
         .brand-tagline {
             font-size: 0.9rem;
-            color: #94a3b8 !important;
+            color: #cbd5e1 !important;
             margin-top: 10px;
             font-weight: 400;
         }
@@ -3319,7 +3345,7 @@ def render_login_page():
             text-align: center !important;
             font-size: 1.5rem !important;
             font-weight: 800 !important;
-            color: #0f172a !important; /* Gelap pekat */
+            color: #0f172a !important;
             margin: 0 0 25px 0 !important;
             position: relative;
             padding-bottom: 15px;
@@ -3343,12 +3369,12 @@ def render_login_page():
         }
         
         [data-testid="stForm"] .stTextInput input {
-            background-color: #f8fafc !important; /* Abu-abu sangat terang */
+            background-color: #f8fafc !important;
             border: 2px solid #cbd5e1 !important;
             border-radius: 10px !important;
             padding: 15px 18px !important;
             font-size: 1rem !important;
-            color: #0f172a !important; /* Teks input gelap */
+            color: #0f172a !important;
             width: 100% !important;
             font-family: 'Inter', sans-serif !important;
         }
@@ -3360,7 +3386,7 @@ def render_login_page():
         }
         
         [data-testid="stForm"] .stTextInput input::placeholder {
-            color: #64748b !important; /* Warna placeholder abu-abu gelap */
+            color: #64748b !important;
             opacity: 1 !important;
         }
         
@@ -3387,7 +3413,7 @@ def render_login_page():
             box-shadow: 0 6px 20px rgba(14, 165, 233, 0.6) !important;
         }
         
-        /* ===== UTILITY ELEMENTS (REMEMBER ME) ===== */
+        /* ===== UTILITY ELEMENTS ===== */
         .form-options {
             display: flex;
             justify-content: space-between;
@@ -3413,6 +3439,7 @@ def render_login_page():
             margin-top: 30px;
             font-size: 0.85rem;
             color: #94a3b8 !important;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.8);
         }
     </style>
     """, unsafe_allow_html=True)
@@ -3431,7 +3458,6 @@ def render_login_page():
     with st.form("login_form", clear_on_submit=False):
         st.markdown("<div class='form-title'>SECURE ACCESS</div>", unsafe_allow_html=True)
         
-        # Username Input
         username = st.text_input(
             "Username", 
             placeholder="Username", 
@@ -3439,7 +3465,6 @@ def render_login_page():
             key="login_username"
         )
         
-        # Password Input
         password = st.text_input(
             "Password", 
             type="password", 
@@ -3448,7 +3473,6 @@ def render_login_page():
             key="login_password"
         )
         
-        # Options: Remember Me + Forgot Password
         st.markdown("""
         <div class="form-options">
             <span><input type="checkbox" style="accent-color:#0ea5e9;"> Remember me</span>
@@ -3456,10 +3480,8 @@ def render_login_page():
         </div>
         """, unsafe_allow_html=True)
         
-        # Submit Button
         submit = st.form_submit_button("🔐 SIGN IN")
         
-        # 🔹 Authentication Logic
         if submit:
             with st.spinner("Verifying credentials..."):
                 time.sleep(0.8) 
