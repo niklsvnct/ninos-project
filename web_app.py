@@ -3033,7 +3033,7 @@ class ConfigurationManager:
             st.session_state['show_analytics'] = False
         
         if 'selected_date' not in st.session_state:
-            st.session_state['selected_date'] = datetime.datetime.now().date()
+            st.session_state['selected_date'] = datetime.now().date()
         
         if 'view_mode' not in st.session_state:
             st.session_state['view_mode'] = 'Cards'
