@@ -3453,7 +3453,7 @@ def render_login_page():
 
     # 🔹 Login Form Card
     with st.form("login_form", clear_on_submit=False):
-        st.markdown("<div class='form-title'>SECURE ACCESS</div>", unsafe_allow_html=True)
+        st.markdown("<div class='form-title'>LOGIN</div>", unsafe_allow_html=True)
         
         username = st.text_input(
             "Username", 
