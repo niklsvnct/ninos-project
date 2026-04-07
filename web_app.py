@@ -443,10 +443,6 @@ class StatusRepository(DataRepository):
             return None
             
             return _self.transform(df)
-            
-        except Exception as e:
-            st.warning(f"⚠️ Failed to fetch status data: {str(e)}")
-            return None
     
     def validate(self, df: pd.DataFrame) -> bool:
         """Validate status data structure."""
@@ -720,19 +716,6 @@ class AttendanceService:
             return pd.Series(result)
 
         # 4. Finalisasi (Hanya satu kali proses)
-        if grouped.ngroups == 0: return pd.DataFrame()
-        result_df = grouped.apply(process_group).reset_index()
-        result_df.rename(columns={AppConstants.COL_PERSON_NAME: AppConstants.COL_EMPLOYEE_NAME}, inplace=True)
-        return result_df
-
-        # 4. Eksekusi Apply dan Transformasi Akhir
-        if grouped.ngroups == 0: return pd.DataFrame()
-        
-        result_df = grouped.apply(process_group).reset_index()
-        result_df.rename(columns={AppConstants.COL_PERSON_NAME: AppConstants.COL_EMPLOYEE_NAME}, inplace=True)
-        
-        return result_df
-
         if grouped.ngroups == 0: return pd.DataFrame()
         result_df = grouped.apply(process_group).reset_index()
         result_df.rename(columns={AppConstants.COL_PERSON_NAME: AppConstants.COL_EMPLOYEE_NAME}, inplace=True)
