@@ -24,7 +24,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from PIL import Image
 import base64
-
+import time
 # ================================================================================
 # SECTION 1: CONFIGURATION & CONSTANTS LAYER
 # ================================================================================
@@ -3215,120 +3215,415 @@ def render_settings_page() -> None:
         )
 
 def render_login_page():
-    """Render custom login page with a professional, centralized card design."""
+    """Render a premium, professional login page with modern UX/UI design."""
+    
+    # 🔹 Inject Premium CSS with Animations & Modern Styling
     st.markdown("""
     <style>
-        /* 1. Background halaman login */
+        /* ===== GLOBAL RESET & TYPOGRAPHY ===== */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+        
+        * { box-sizing: border-box; }
+        
         .stApp {
-            background: linear-gradient(rgba(11, 14, 20, 0.8), rgba(11, 14, 20, 0.9)),
-                        url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=2074&auto=format&fit=crop') no-repeat center center fixed;
-            background-size: cover;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            background-attachment: fixed;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
         }
-
-        /* 2. Sembunyikan elemen bawaan Streamlit yang mengganggu */
-        [data-testid="stSidebar"], [data-testid="stHeader"] {
-            display: none;
-        }
-
-        /* 3. Pusatkan konten ke tengah layar */
+        
+        /* Hide default Streamlit elements */
+        [data-testid="stSidebar"], 
+        [data-testid="stHeader"], 
+        .stDeployButton { display: none !important; }
+        
+        /* Center content container */
         .block-container {
-            padding-top: 12vh !important;
-            max-width: 450px !important;
+            padding-top: 8vh !important;
+            padding-bottom: 0 !important;
+            max-width: 480px !important;
+            margin: 0 auto !important;
         }
-
-        /* 4. Styling khusus untuk Form Container agar menjadi Card Utama */
+        
+        /* ===== LOGIN CARD ===== */
         [data-testid="stForm"] {
-            background-color: rgba(255, 255, 255, 0.98);
-            padding: 40px 30px;
-            border-radius: 16px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
-            border: 1px solid rgba(255,255,255,0.2);
+            background: linear-gradient(145deg, rgba(255,255,255,0.98), rgba(248,250,252,0.95));
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 48px 40px 40px;
+            border-radius: 24px;
+            box-shadow: 
+                0 25px 50px -12px rgba(0, 0, 0, 0.6),
+                0 0 0 1px rgba(255, 255, 255, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            animation: cardSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
-
-        /* 5. Custom font & warna teks di dalam card */
-        [data-testid="stForm"] * {
-            color: #1e2530 !important;
+        
+        @keyframes cardSlideIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(30px) scale(0.98); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0) scale(1); 
+            }
         }
-
-        /* 6. Input text field styling */
+        
+        /* ===== BRAND HEADER ===== */
+        .brand-header {
+            text-align: center;
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid rgba(203, 213, 225, 0.5);
+        }
+        
+        .brand-icon {
+            font-size: 3.8rem;
+            margin-bottom: 8px;
+            display: inline-block;
+            animation: floatIcon 3s ease-in-out infinite;
+            filter: drop-shadow(0 4px 12px rgba(0, 168, 255, 0.4));
+        }
+        
+        @keyframes floatIcon {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        
+        .brand-title {
+            font-family: 'Inter', sans-serif;
+            font-size: 2.1rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0 0 6px 0;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .brand-subtitle {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            color: #0ea5e9;
+            font-weight: 600;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            margin: 0;
+            opacity: 0.9;
+        }
+        
+        .brand-tagline {
+            font-size: 0.9rem;
+            color: #64748b;
+            margin-top: 12px;
+            font-weight: 400;
+        }
+        
+        /* ===== FORM TITLE ===== */
+        .form-title {
+            text-align: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin: 0 0 28px 0;
+            position: relative;
+            padding-bottom: 12px;
+        }
+        
+        .form-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, #0ea5e9, #22d3ee);
+            border-radius: 3px;
+        }
+        
+        /* ===== INPUT FIELDS ===== */
+        [data-testid="stForm"] .stTextInput {
+            margin-bottom: 18px;
+        }
+        
         [data-testid="stForm"] .stTextInput input {
-            background-color: #f8f9fa !important;
-            border: 2px solid #e9ecef !important;
-            border-radius: 8px !important;
-            padding: 12px 15px !important;
-            color: #1e2530 !important;
-            transition: all 0.3s ease;
+            background: #f8fafc !important;
+            border: 2px solid #e2e8f0 !important;
+            border-radius: 12px !important;
+            padding: 14px 18px !important;
+            font-size: 0.95rem !important;
+            color: #1e293b !important;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            font-family: 'Inter', sans-serif !important;
         }
+        
         [data-testid="stForm"] .stTextInput input:focus {
-            border-color: #00a8ff !important;
-            box-shadow: 0 0 0 3px rgba(0, 168, 255, 0.15) !important;
-            background-color: #ffffff !important;
+            border-color: #0ea5e9 !important;
+            box-shadow: 
+                0 0 0 4px rgba(14, 165, 233, 0.15),
+                0 4px 12px rgba(14, 165, 233, 0.1) !important;
+            background: #ffffff !important;
+            transform: translateY(-1px);
         }
-
-        /* 7. Button styling yang lebih elegan & konsisten dengan tema utama */
+        
+        [data-testid="stForm"] .stTextInput input::placeholder {
+            color: #94a3b8 !important;
+            opacity: 1;
+        }
+        
+        /* ===== BUTTON STYLING ===== */
         [data-testid="stForm"] .stFormSubmitButton button {
-            background: linear-gradient(135deg, #00a8ff, #00cec9) !important;
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 50%, #0369a1 100%) !important;
             color: white !important;
             border: none !important;
             width: 100% !important;
-            border-radius: 8px !important;
-            padding: 12px !important;
-            font-weight: 800 !important;
-            font-size: 1.1rem !important;
-            letter-spacing: 1.5px !important;
-            text-transform: uppercase !important;
-            margin-top: 15px !important;
-            box-shadow: 0 4px 15px rgba(0, 168, 255, 0.3) !important;
-            transition: all 0.3s ease !important;
+            border-radius: 12px !important;
+            padding: 15px 24px !important;
+            font-weight: 700 !important;
+            font-size: 1rem !important;
+            letter-spacing: 0.5px !important;
+            text-transform: uppercase;
+            margin-top: 8px !important;
+            cursor: pointer !important;
+            box-shadow: 
+                0 4px 14px rgba(14, 165, 233, 0.4),
+                0 2px 4px rgba(0, 0, 0, 0.1) !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            position: relative;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif !important;
         }
+        
+        [data-testid="stForm"] .stFormSubmitButton button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+            transition: left 0.5s;
+        }
+        
         [data-testid="stForm"] .stFormSubmitButton button:hover {
-            transform: translateY(-2px) !important;
-            box-shadow: 0 6px 20px rgba(0, 168, 255, 0.4) !important;
+            transform: translateY(-2px);
+            box-shadow: 
+                0 8px 25px rgba(14, 165, 233, 0.55),
+                0 4px 8px rgba(0, 0, 0, 0.15) !important;
         }
-
-        /* Alert jaraknya disesuaikan */
-        .stAlert { margin-top: 15px; }
-
+        
+        [data-testid="stForm"] .stFormSubmitButton button:hover::before {
+            left: 100%;
+        }
+        
+        [data-testid="stForm"] .stFormSubmitButton button:active {
+            transform: translateY(0);
+        }
+        
+        [data-testid="stForm"] .stFormSubmitButton button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        
+        /* ===== UTILITY ELEMENTS ===== */
+        .form-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 16px 0 24px;
+            font-size: 0.9rem;
+        }
+        
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #475569;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        
+        .remember-me input {
+            width: 16px;
+            height: 16px;
+            accent-color: #0ea5e9;
+            cursor: pointer;
+        }
+        
+        .forgot-link {
+            color: #0ea5e9;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+        
+        .forgot-link:hover {
+            color: #0284c7;
+            text-decoration: underline;
+        }
+        
+        /* ===== ALERT STYLING ===== */
+        .stAlert {
+            border-radius: 12px !important;
+            border: none !important;
+            margin-top: 20px !important;
+            font-weight: 500 !important;
+            animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        }
+        
+        @keyframes shake {
+            10%, 90% { transform: translateX(-2px); }
+            20%, 80% { transform: translateX(4px); }
+            30%, 50%, 70% { transform: translateX(-8px); }
+            40%, 60% { transform: translateX(8px); }
+        }
+        
+        /* ===== FOOTER ===== */
+        .login-footer {
+            text-align: center;
+            margin-top: 28px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(203, 213, 225, 0.4);
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+        
+        .login-footer a {
+            color: #0ea5e9;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .login-footer a:hover {
+            text-decoration: underline;
+        }
+        
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 500px) {
+            .block-container { padding-top: 4vh !important; }
+            [data-testid="stForm"] { 
+                padding: 36px 28px 32px; 
+                margin: 0 16px;
+            }
+            .brand-title { font-size: 1.8rem; }
+            .brand-icon { font-size: 3.2rem; }
+        }
+        
+        /* ===== LOADING SPINNER (for button) ===== */
+        .btn-loading {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
     """, unsafe_allow_html=True)
 
-    # Bagian Header/Logo di luar kotak (menyatu dengan background gelap)
+    # 🔹 Brand Header (Outside Card)
     st.markdown("""
-    <div style="text-align: center; margin-bottom: 25px;">
-        <div style="font-size: 3.5rem; margin-bottom: 5px;">✈️</div>
-        <h1 style="font-family: 'Rajdhani', sans-serif; font-size: 2.5rem; font-weight: 800; color: #ffffff; margin: 0; text-shadow: 0 4px 10px rgba(0,0,0,0.5);">WedaBay Airport</h1>
-        <p style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #00cec9; letter-spacing: 2px; text-transform: uppercase; margin-top: 5px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">Absence Center System</p>
+    <div class="brand-header">
+        <div class="brand-icon">✈️</div>
+        <h1 class="brand-title">WedaBay Airport</h1>
+        <p class="brand-subtitle">Absence Center System</p>
+        <p class="brand-tagline">Secure • Efficient • Reliable</p>
     </div>
     """, unsafe_allow_html=True)
 
-    # Form Login Utama
+    # 🔹 Login Form Card
     with st.form("login_form", clear_on_submit=False):
-        st.markdown("<h3 style='text-align: center; margin-bottom: 25px; font-weight: 800; color: #2d3436 !important;'>SECURE LOGIN</h3>", unsafe_allow_html=True)
-
-        username = st.text_input("Username", placeholder="Enter Username", label_visibility="collapsed")
-        password = st.text_input("Password", type="password", placeholder="Enter Password", label_visibility="collapsed")
+        st.markdown("<h2 class='form-title'>SECURE ACCESS</h2>", unsafe_allow_html=True)
         
-        st.markdown("<br>", unsafe_allow_html=True)
-        submit = st.form_submit_button("SIGN IN")
-
+        # Username Input
+        username = st.text_input(
+            "Username", 
+            placeholder="••• Enter your username", 
+            label_visibility="collapsed",
+            key="login_username"
+        )
+        
+        # Password Input
+        password = st.text_input(
+            "Password", 
+            type="password", 
+            placeholder="•••••••• Enter your password", 
+            label_visibility="collapsed",
+            key="login_password"
+        )
+        
+        # Options: Remember Me + Forgot Password
+        st.markdown("""
+        <div class="form-options">
+            <label class="remember-me">
+                <input type="checkbox" id="remember"> Remember me
+            </label>
+            <a href="#" class="forgot-link">Forgot password?</a>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Submit Button
+        submit = st.form_submit_button("🔐 SIGN IN TO DASHBOARD")
+        
+        # 🔹 Authentication Logic
         if submit:
-            # --- DAFTAR 4 AKUN ---
-            valid_users = {
-                "admin": "admin123",
-                "kaban": "kaban2026",
-                "spt_spv": "spt2026",
-                "koordinator": "koor2026"
-            }
-
-            if username.lower() in valid_users and valid_users[username.lower()] == password:
-                st.session_state['authenticated'] = True
-                st.session_state['current_user'] = username.upper()
-                st.rerun()
-            else:
-                st.error("❌ Invalid Credentials. Please try again.")
+            # Show loading state (visual feedback)
+            with st.spinner("Verifying credentials..."):
+                time.sleep(0.8)  # Simulate network delay for UX
+                
+                valid_users = {
+                    "admin": "admin123",
+                    "kaban": "kaban2026", 
+                    "spt_spv": "spt2026",
+                    "koordinator": "koor2026"
+                }
+                
+                # Case-insensitive username check
+                if username.lower() in valid_users and valid_users[username.lower()] == password:
+                    st.session_state['authenticated'] = True
+                    st.session_state['current_user'] = username.upper()
+                    st.session_state['login_time'] = time.time()
                     
-        st.markdown('</div>', unsafe_allow_html=True)
+                    # Success feedback before redirect
+                    st.success("✅ Authentication successful! Redirecting...")
+                    time.sleep(1.2)
+                    st.rerun()
+                else:
+                    st.error("❌ Invalid credentials. Please check your username and password.")
+                    # Optional: Add attempt tracking for security
+                    if 'login_attempts' not in st.session_state:
+                        st.session_state.login_attempts = 0
+                    st.session_state.login_attempts += 1
+                    
+                    if st.session_state.login_attempts >= 3:
+                        st.warning("⚠️ Too many failed attempts. Please try again later or contact support.")
 
+    # 🔹 Professional Footer
+    st.markdown("""
+    <div class="login-footer">
+        <p>© 2026 WedaBay Airport • <a href="#">Privacy Policy</a> • <a href="#">Support</a></p>
+        <p style="margin-top:6px; font-size:0.8rem; opacity:0.8;">System v2.4.1 • Encrypted Connection 🔒</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # 🔹 Optional: Auto-focus first input (enhanced UX)
+    st.markdown("""
+    <script>
+        // Auto-focus username field on load
+        const input = document.querySelector('input[placeholder*="username"]');
+        if (input) input.focus();
+    </script>
+    """, unsafe_allow_html=True)
 
 def main() -> None:
     """
