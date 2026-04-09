@@ -1720,7 +1720,7 @@ class ComponentRenderer:
         """, unsafe_allow_html=True)
         
         # Detail popover
-        with st.popover("📋 DETAILED FLIGHT LOG", use_container_width=True):
+        with st.popover("📋 DETAILED LOG", use_container_width=True):
             self._render_detail_popover(name, morning, break_out, break_in, evening, 
                                         status_text, status.color, div_name, is_late)
     
