@@ -3443,7 +3443,7 @@ def render_login_page():
     """, unsafe_allow_html=True)
 
     # 🔹 Login Form Card
-    with st.form("login_form", clear_on_submit=False):
+    with st.form(key="login_form", clear_on_submit=False):
         st.markdown("<div class='form-title'>LOGIN</div>", unsafe_allow_html=True)
         
         username = st.text_input(
@@ -3472,7 +3472,7 @@ def render_login_page():
         
         if submit:
             with st.spinner("Verifying credentials..."):
-                import time as tm  # Kita panggil dengan nama 'tm' agar tidak bentrok
+                import time as tm
                 tm.sleep(0.8) 
                 
                 valid_users = {
@@ -3486,7 +3486,7 @@ def render_login_page():
                     st.session_state['authenticated'] = True
                     st.session_state['current_user'] = username.upper()
                     st.success("✅ Authentication successful! Redirecting...")
-                    tm.sleep(1) # Ganti time.sleep jadi tm.sleep
+                    tm.sleep(1)
                     st.rerun()
                 else:
                     st.error("❌ Invalid credentials. Please try again.")
@@ -3497,63 +3497,6 @@ def render_login_page():
         <p>© 2026 WedaBay Airport • System v2.4.1</p>
     </div>
     """, unsafe_allow_html=True)
-
-def main() -> None:
-    """
-    Main application entry point.
-    Orchestrates the entire application flow.
-    """
-    # 1. Konfigurasi halaman dasar
-    configure_page()
-    
-    # 2. Inisialisasi status login
-    if 'authenticated' not in st.session_state:
-        st.session_state['authenticated'] = False
-
-    # 3. Logika Pintu Masuk
-    if not st.session_state['authenticated']:
-        # Jika belum login, tampilkan form login
-        render_login_page()
-    else:
-        # JIKA SUDAH LOGIN, JALANKAN SELURUH APLIKASI
-        ConfigurationManager.initialize_session_state()
-        initialize_divisions()
-        ThemeManager.apply_global_styles()
-        
-        performance_monitor = PerformanceMonitor()
-        performance_monitor.start_timer('app_load')
-        
-        # Tambahkan Info User & Tombol Logout di Sidebar
-        st.sidebar.markdown(f"👤 Login as: **{st.session_state.get('current_user', 'USER')}**")
-        if st.sidebar.button("🚪 LOGOUT", use_container_width=True):
-            st.session_state['authenticated'] = False
-            st.cache_data.clear()
-            st.rerun()
-            
-        st.sidebar.markdown("---")
-        
-        # Render menu aplikasi
-        selected_menu = render_sidebar()
-        controller = AttendanceController()
-        
-        try:
-            if selected_menu == "📊 Dashboard":
-                controller.run_dashboard()
-            elif selected_menu == "📝 Submit Report":
-                controller.run_report_form()
-            elif selected_menu == "⚙️ Settings":
-                render_settings_page()
-            
-            load_time = performance_monitor.end_timer('app_load')
-            if load_time > 0:
-                st.sidebar.caption(f"⏱️ Load time: {load_time:.2f}s")
-        
-        except Exception as e:
-            st.error(f"⚠️ Application Error: {str(e)}")
-            st.exception(e)
-            
-            if st.button("🔄 Reload Application"):
-                st.rerun()
 
 # ================================================================================
 # APPLICATION EXECUTION
