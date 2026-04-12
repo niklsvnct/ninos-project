@@ -3504,3 +3504,66 @@ def render_login_page():
 
 if __name__ == "__main__":
     main()
+def main() -> None:
+    """
+    Main application entry point.
+    Orchestrates the entire application flow.
+    """
+    # 1. Konfigurasi halaman dasar
+    configure_page()
+    
+    # 2. Inisialisasi status login
+    if 'authenticated' not in st.session_state:
+        st.session_state['authenticated'] = False
+
+    # 3. Logika Pintu Masuk
+    if not st.session_state['authenticated']:
+        # Jika belum login, tampilkan form login
+        render_login_page()
+    else:
+        # JIKA SUDAH LOGIN, JALANKAN SELURUH APLIKASI
+        ConfigurationManager.initialize_session_state()
+        initialize_divisions()
+        ThemeManager.apply_global_styles()
+        
+        performance_monitor = PerformanceMonitor()
+        performance_monitor.start_timer('app_load')
+        
+        # Tambahkan Info User & Tombol Logout di Sidebar
+        st.sidebar.markdown(f"👤 Login as: **{st.session_state.get('current_user', 'USER')}**")
+        if st.sidebar.button("🚪 LOGOUT", use_container_width=True):
+            st.session_state['authenticated'] = False
+            st.cache_data.clear()
+            st.rerun()
+            
+        st.sidebar.markdown("---")
+        
+        # Render menu aplikasi
+        selected_menu = render_sidebar()
+        controller = AttendanceController()
+        
+        try:
+            if selected_menu == "📊 Dashboard":
+                controller.run_dashboard()
+            elif selected_menu == "📝 Submit Report":
+                controller.run_report_form()
+            elif selected_menu == "⚙️ Settings":
+                render_settings_page()
+            
+            load_time = performance_monitor.end_timer('app_load')
+            if load_time > 0:
+                st.sidebar.caption(f"⏱️ Load time: {load_time:.2f}s")
+        
+        except Exception as e:
+            st.error(f"⚠️ Application Error: {str(e)}")
+            st.exception(e)
+            
+            if st.button("🔄 Reload Application"):
+                st.rerun()
+
+# ================================================================================
+# APPLICATION EXECUTION
+# ================================================================================
+
+if __name__ == "__main__":
+    main()
