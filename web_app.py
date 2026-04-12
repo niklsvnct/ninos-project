@@ -3499,11 +3499,6 @@ def render_login_page():
     """, unsafe_allow_html=True)
 
 # ================================================================================
-# APPLICATION EXECUTION
-# ================================================================================
-
-if __name__ == "__main__":
-    main()
 def main() -> None:
     """
     Main application entry point.
