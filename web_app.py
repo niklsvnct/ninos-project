@@ -212,11 +212,18 @@ class DivisionRegistry:
         return list(dict.fromkeys(members))
 
 
-# Initialize Division Registry with actual data
-# Initialize Division Registry with actual data
+# ================================================================================
+# CARI BAGIAN INI DAN GANTI ISINYA
+# ================================================================================
+
+# ================================================================================
+# CARI BAGIAN INI DAN GANTI ISINYA
+# ================================================================================
+
 def initialize_divisions():
     """
-    Initialize all division configurations with CUSTOM SORT ORDER defined by User.
+    Initialize all division configurations with CUSTOM SORT ORDER.
+    Daftar nama disusun sesuai urutan sistem absensi (Alvon dihapus).
     """
     divisions_data = [
         DivisionConfig("SPT & SPV", "#FFD700", "👨‍✈️", "SPT & SPV", description="SPT & SPV", priority=1, 
@@ -231,45 +238,38 @@ def initialize_divisions():
         DivisionConfig("TRANS APRON", "#e1b12c", "🚌", "APR", description="Trans Apron", priority=4, 
                        members=["Ilham Rahim", "Dwiki Agus Saputro", "Moh. Sofyan", "Faisal M. Kadir", "Amirudin Rustam", "Faturrahman Kaunar", "Wawan Hermawan", "Rahmat Joni", "Nur Ichsan", "Wisbenth Tangguh Wicaksono"]),
         
-        # --- PERUBAHAN: Yusuf, Alvon, dan Irwan dikeluarkan dari ATS ---
         DivisionConfig("ATS", "#44bd32", "📡", "ATS", description="Air Traffic Services", priority=5, 
-                       members=["Nurultanti", "Firlon Paembong", "Nurdahlia Is. Folaimam", "Ghaly Rabbani Panji Indra", "Ikhsan Wahyu Vebriyan", "Rizki Mahardhika Ardi Tigo", "Nikolaus Vincent Quirino"]),
+                       members=["Nurultanti", "Firlon Paembong", "Irwan Rezky Setiawan", "Yusuf Arviansyah", "Nurdahlia Is. Folaimam", "Ghaly Rabbani Panji Indra", "Ikhsan Wahyu Vebriyan", "Rizki Mahardhika Ardi Tigo", "Nikolaus Vincent Quirino"]),
         
-        # --- DIVISI BARU: TELNAV DITAMBAHKAN DI SINI ---
-        DivisionConfig("TELNAV", "#9b59b6", "📻", "TEL", description="Telecommunication & Navigation", priority=6, 
-                       members=["Irwan Rezky Setiawan", "Yusuf Arviansyah", "Alvon Samuel Sinaga"]),
-        
-        # Priority selanjutnya dinaikkan angkanya agar urutan tetap sempurna
-        DivisionConfig("ADM COMPLIANCE", "#8c7ae6", "📋", "ADM", description="Administration & Compliance", priority=7, 
+        DivisionConfig("ADM COMPLIANCE", "#8c7ae6", "📋", "ADM", description="Administration & Compliance", priority=6, 
                        members=["Yessicha Aprilyona Siregar", "Gabriela Margrith Louisa Klavert", "Aldi Saptono"]),
         
-        DivisionConfig("TRANSLATOR", "#00cec9", "🎧", "TRN", description="Translation Services", priority=8, 
+        DivisionConfig("TRANSLATOR", "#00cec9", "🎧", "TRN", description="Translation Services", priority=7, 
                        members=["Wilyam Candra", "Norika Joselyn Modnissa"]),
         
-        DivisionConfig("AVSEC", "#c23616", "🛡️", "SEC", description="Aviation Security", priority=9, 
+        DivisionConfig("AVSEC", "#c23616", "🛡️", "SEC", description="Aviation Security", priority=8, 
                        members=["Andrian Maranatha", "Toni Nugroho Simarmata", "Muhamad Albi Ferano", "Andreas Charol Tandjung", "Sabadia Mahmud", "Rusdin Malagapi", "Muhamad Judhytia Winli", "Wahyu Samsudin", "Fientje Elisabeth Joseph", "Anglie Fitria Desiana Mamengko", "Dwi Purnama Bimasakti", "Windi Angriani Sulaeman", "Megawati A. Rauf"]),
         
-        DivisionConfig("Pasasi", "#e17055", "🚜", "GND", description="Ground Handling Operations", priority=10, 
+        DivisionConfig("Pasasi", "#e17055", "🚜", "GND", description="Ground Handling Operations", priority=9, 
                        members=["Yuda Saputra.", "Tesalonika Gratia Putri Toar", "Esi Setia Ningseh", "Ardiyanto Kalatjo", "Febrianti Tikabala"]),
         
-        DivisionConfig("HELICOPTER", "#6c5ce7", "🚁", "HEL", description="Helicopter Operations", priority=11, 
+        DivisionConfig("HELICOPTER", "#6c5ce7", "🚁", "HEL", description="Helicopter Operations", priority=10, 
                        members=["Agung Sabar Santoso Taufik", "Farok Abdul", "Yus Andi"]),
         
-        DivisionConfig("GROUND HANDLING OPS", "#e17055", "🚜", "GND2", description="Ground Handling Support", priority=12, 
+        DivisionConfig("GROUND HANDLING OPS", "#e17055", "🚜", "GND2", description="Ground Handling Support", priority=11, 
                        members=["Achmad Rizky Ariz", "Recky Irwan R. A Arsyad", "Muh. Noval Kipudjena", "Albert Papuling", "Eko", "Rizki Wally"]),
         
-        DivisionConfig("AMC & TERMINAL", "#0984e3", "🏢", "AMC", description="Airport Movement Control & Terminal", priority=13, 
+        DivisionConfig("AMC & TERMINAL", "#0984e3", "🏢", "AMC", description="Airport Movement Control & Terminal", priority=12, 
                        members=["Muhammad Tunjung Rohmatullah", "Risky Sulung", "Muchamad Nur Syaifulrahman", "Sarni Massiri", "Gibhran Fitransyah Yusri", "Muhdi R Tomia", "Riski Rifaldo Theofilus Anu", "Sunarty Fakir"]),
         
-        DivisionConfig("SAFETY OFFICER", "#fd79a8", "🦺", "SFT", description="Safety Operations", priority=14, 
+        DivisionConfig("SAFETY OFFICER", "#fd79a8", "🦺", "SFT", description="Safety Operations", priority=13, 
                        members=["Hildan Ahmad Zaelani", "Abdurahim Andar"]),
         
-        DivisionConfig("PKP-PK", "#fab1a0", "🚒", "RES", description="Fire & Rescue Services", priority=15, 
+        DivisionConfig("PKP-PK", "#fab1a0", "🚒", "RES", description="Fire & Rescue Services", priority=14, 
                        members=["Andreas Aritonang", "Achmad Alwan Asyhab", "Doni Eka", "Bayu Mustaqim Wicaksono", "Yogi Prasetya Eka Winandra", "Akhsin Aditya Weza Putra", "Fardhan Ahmad Tajali", "Maikel R", "Saldi Sandra", "Hamzah M Ali Gani", "Marfan Mandar", "Julham Keya", "Aditya Sugiantoro A", "M.Usman", "M.Akbar Patty", "Daniel Freski W", "Fandi M Naser", "Agung F", "Deni Hendri", "M Rifai", "Idrus Arsad"])
     ]
     for division in divisions_data:
         DivisionRegistry.register(division)
-
 # ================================================================================
 # SECTION 2: DATA ACCESS LAYER (REPOSITORY PATTERN)
 # ================================================================================
