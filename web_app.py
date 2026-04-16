@@ -211,15 +211,6 @@ class DivisionRegistry:
         # Kita pakai trik 'dict.fromkeys' agar urutan Patra, Su Adam, dst tetap terjaga.
         return list(dict.fromkeys(members))
 
-
-# ================================================================================
-# CARI BAGIAN INI DAN GANTI ISINYA
-# ================================================================================
-
-# ================================================================================
-# CARI BAGIAN INI DAN GANTI ISINYA
-# ================================================================================
-
 def initialize_divisions():
     """
     Initialize all division configurations with CUSTOM SORT ORDER.
@@ -232,11 +223,13 @@ def initialize_divisions():
         DivisionConfig("TLB", "#00A8FF", "🔧", "TLB", description="Teknik Listrik Bandara", priority=2, 
                        members=["M. Ansori", "Bayu Pratama Putra Katuwu", "Yoga Nugraha Putra Pasaribu", "Junaidi Taib", "Muhammad Rizal Amra", "Rusli Dj"]),
         
-        DivisionConfig("TBL", "#0097e6", "📦", "TBL", description="Teknik Bangunan Dan Landasan", priority=3, 
-                       members=["Venesia Aprilia Ineke", "Muhammad Naufal Ramadhan", "Yuzak Gerson Puturuhu", "Muhamad Alief Wildan", "Gafur Hamisi", "Jul Akbar M. Nur", "Adrianto Laundang"]),
+        # UPDATE: Nama Divisi berubah & Tambahan anggota (Moh. Sofyan & Wawan Hermawan)
+        DivisionConfig("TBL dan Teknik Support", "#0097e6", "📦", "TBL", description="Teknik Bangunan Dan Landasan & Teknik Support", priority=3, 
+                       members=["Venesia Aprilia Ineke", "Muhammad Naufal Ramadhan", "Yuzak Gerson Puturuhu", "Muhamad Alief Wildan", "Gafur Hamisi", "Jul Akbar M. Nur", "Adrianto Laundang", "Moh. Sofyan", "Wawan Hermawan"]),
         
+        # UPDATE: Moh. Sofyan & Wawan Hermawan dihapus dari sini
         DivisionConfig("TRANS APRON", "#e1b12c", "🚌", "APR", description="Trans Apron", priority=4, 
-                       members=["Ilham Rahim", "Dwiki Agus Saputro", "Moh. Sofyan", "Faisal M. Kadir", "Amirudin Rustam", "Faturrahman Kaunar", "Wawan Hermawan", "Rahmat Joni", "Nur Ichsan", "Wisbenth Tangguh Wicaksono"]),
+                       members=["Ilham Rahim", "Dwiki Agus Saputro", "Faisal M. Kadir", "Amirudin Rustam", "Faturrahman Kaunar", "Rahmat Joni", "Nur Ichsan", "Wisbenth Tangguh Wicaksono"]),
         
         DivisionConfig("ATS", "#44bd32", "📡", "ATS", description="Air Traffic Services", priority=5, 
                        members=["Nurultanti", "Firlon Paembong", "Irwan Rezky Setiawan", "Yusuf Arviansyah", "Nurdahlia Is. Folaimam", "Ghaly Rabbani Panji Indra", "Ikhsan Wahyu Vebriyan", "Rizki Mahardhika Ardi Tigo", "Nikolaus Vincent Quirino"]),
