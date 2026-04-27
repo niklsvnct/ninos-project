@@ -462,7 +462,8 @@ class StatusRepository(DataRepository):
         col_date = AppConstants.COL_DATE      # 'Tanggal'
 
         # Daftar kode status yang mungkin muncul nempel dengan nama
-        possible_codes = ['CR', 'SKD', 'OFF', 'IZIN', 'SAKIT', 'DL', 'CUTI', 'HIP']
+        # Daftar kode status yang mungkin muncul nempel dengan nama
+        possible_codes = ['CR', 'SKD', 'OFF', 'IZIN', 'SAKIT', 'DL', 'CUTI', 'HIP', 'EMERGENCY']
 
         for _, row in df.iterrows():
             # 1. Parsing Tanggal
