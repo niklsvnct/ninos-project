@@ -2499,11 +2499,12 @@ class AttendanceController:
         
         # --- 2. KONFIGURASI KOLOM TABEL ---
         # Inisialisasi session state untuk data tabel jika belum ada
+        # --- 2. KONFIGURASI KOLOM TABEL ---
+        # Inisialisasi session state untuk data tabel jika belum ada
         if 'input_data' not in st.session_state or 'Tanggal Mulai' not in st.session_state['input_data'].columns:
             st.session_state['input_data'] = pd.DataFrame(columns=['Nama Karyawan', 'Keterangan', 'Tanggal Mulai', 'Tanggal Selesai'])
             
-        status_options = ['CR', 'SKD', 'OFF', 'IZIN', 'SAKIT', 'DL', 'CUTI', 'HIP']
-        
+        status_options = ['CR', 'SKD', 'OFF', 'IZIN', 'SAKIT', 'DL', 'CUTI', 'HIP', 'EMERGENCY']
         # Editor Tabel
         edited_df = st.data_editor(
             st.session_state['input_data'],
