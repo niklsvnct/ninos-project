@@ -83,6 +83,37 @@ class AppConstants:
     DATE_FORMAT = '%Y-%m-%d'
     TIME_FORMAT = '%H:%M'
     DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
+    CUSTOM_EXPORT_ORDER = [
+        "Patra Anggana", "Su Adam", "Budiman Arifin", "Rifaldy Ilham Bhagaskara",
+        "Marwan S Halid", "Budiono", "M. Ansori", "Bayu Pratama Putra Katuwu",
+        "Yoga Nugraha Putra Pasaribu", "Junaidi Taib", "Muhammad Rizal Amra",
+        "Rusli Dj", "Venesia Aprilia Ineke", "Muhammad Naufal Ramadhan",
+        "Yuzak Gerson Puturuhu", "Muhamad Alief Wildan", "Gafur Hamisi",
+        "Jul Akbar M. Nur", "Adrianto Laundang", "Ilham Rahim", "Dwiki Agus Saputro",
+        "Moh. Sofyan", "Faisal M. Kadir", "Amirudin Rustam", "Faturrahman Kaunar",
+        "Wawan Hermawan", "Rahmat Joni", "Nur Ichsan", "Wisbenth Tangguh Wicaksono",
+        "Nurultanti", "Firlon Paembong", "Irwan Rezky Setiawan", "Yusuf Arviansyah",
+        "Nurdahlia Is. Folaimam", "Ghaly Rabbani Panji Indra", "Ikhsan Wahyu Vebriyan",
+        "Rizki Mahardhika Ardi Tigo", "Nikolaus Vincent Quirino", "Yessicha Aprilyona Siregar",
+        "Gabriela Margrith Louisa Klavert", "Aldi Saptono", "Wilyam Candra",
+        "Norika Joselyn Modnissa", "Andrian Maranatha", "Toni Nugroho Simarmata",
+        "Muhamad Albi Ferano", "Andreas Charol Tandjung", "Sabadia Mahmud",
+        "Rusdin Malagapi", "Muhamad Judhytia Winli", "Wahyu Samsudin",
+        "Fientje Elisabeth Joseph", "Anglie Fitria Desiana Mamengko", "Dwi Purnama Bimasakti",
+        "Windi Angriani Sulaeman", "Megawati A. Rauf", "Yuda Saputra.",
+        "Tesalonika Gratia Putri Toar", "Esi Setia Ningseh", "Ardiyanto Kalatjo",
+        "Febrianti Tikabala", "Agung Sabar Santoso Taufik", "Farok Abdul", "Yus Andi",
+        "Achmad Rizky Ariz", "Recky Irwan R. A Arsyad", "Muh. Noval Kipudjena",
+        "Albert Papuling", "Eko", "Rizki Wally", "Muhammad Tunjung Rohmatullah",
+        "Risky Sulung", "Muchamad Nur Syaifulrahman", "Sarni Massiri",
+        "Gibhran Fitransyah Yusri", "Muhdi R Tomia", "Riski Rifaldo Theofilus Anu",
+        "Sunarty Fakir", "Hildan Ahmad Zaelani", "Abdurahim Andar", "Andreas Aritonang",
+        "Achmad Alwan Asyhab", "Doni Eka", "Bayu Mustaqim Wicaksono",
+        "Yogi Prasetya Eka Winandra", "Akhsin Aditya Weza Putra", "Fardhan Ahmad Tajali",
+        "Maikel R", "Saldi Sandra", "Hamzah M Ali Gani", "Marfan Mandar", "Julham Keya",
+        "Aditya Sugiantoro A", "M.Usman", "M.Akbar Patty", "Daniel Freski W",
+        "Fandi M Naser", "Agung F", "Deni Hendri", "M Rifai", "Idrus Arsad"
+    ]
 
 
 class TimeRanges(Enum):
@@ -737,8 +768,10 @@ class AttendanceService:
         else:
             df_times = pd.DataFrame()
         
-        all_employees = DivisionRegistry.get_all_members()
+        # --- PERBAIKAN: PAKSA URUTAN SESUAI CUSTOM LIST ---
+        all_employees = AppConstants.CUSTOM_EXPORT_ORDER
         df_all = pd.DataFrame({AppConstants.COL_EMPLOYEE_NAME: all_employees})
+        # ---------------------------------------------------
         
         if not df_times.empty:
             df_final = pd.merge(df_all, df_times, on=AppConstants.COL_EMPLOYEE_NAME, how='left')
