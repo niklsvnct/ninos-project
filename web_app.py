@@ -739,18 +739,23 @@ class AttendanceService:
                 
                 if t <= limit_pagi_end:
                     if result['Pagi'] == '': result['Pagi'] = val_str
+                    
                 elif limit_siang_out_start <= t <= limit_siang_out_end:
-                    if result['Siang_1'] == '': result['Siang_1'] = val_str
+                    if result['Siang_1'] == '': 
+                        result['Siang_1'] = val_str
+                    # TAMBAHAN: Kalau Siang 1 udah keisi, lempar ke Siang 2 (Buat kasus double-tap 1 menit)
+                    elif result['Siang_2'] == '':
+                        result['Siang_2'] = val_str
+                        
                 elif limit_siang_in_start <= t <= limit_siang_in_end:
                     if result['Siang_2'] == '': result['Siang_2'] = val_str
+                    
                 elif t >= start_sore:
                     result['Sore'] = val_str
                 
                 # Jaring pengaman buat yang pulang nanggung (sebelum batas sore)
                 if t == last_log and t >= time(16, 0, 0) and result['Sore'] == '':
                      result['Sore'] = val_str
-
-            return pd.Series(result)
 
         # 4. Finalisasi (Hanya satu kali proses)
         if grouped.ngroups == 0: return pd.DataFrame()
