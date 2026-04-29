@@ -676,7 +676,6 @@ class AttendanceService:
     def extract_time_ranges(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Extracts attendance into Pagi, Siang1, Siang2, Sore columns.
-        FIXED: Menggunakan group.name untuk menghindari KeyError 'Tanggal'
         """
         if df.empty: return pd.DataFrame()
 
@@ -722,12 +721,9 @@ class AttendanceService:
                 # ATURAN SHIFT 2 (Istirahat 14:00 - 16:00)
                 limit_pagi_end = time(11, 59, 59)
                 if is_friday:
-                    # Khusus Jumat
                     limit_siang_out_start, limit_siang_out_end = time(12, 0, 0), time(13, 29, 59)
                     limit_siang_in_start, limit_siang_in_end = time(13, 30, 0), time(16, 59, 59)
                 else:
-                    # NORMAL NON-JUMAT: Istirahat 14:00 - 16:00
-                    # Rentang "Keluar" (13:30 - 14:59) dan "Balik" (15:00 - 16:59)
                     limit_siang_out_start, limit_siang_out_end = time(13, 30, 0), time(14, 59, 59)
                     limit_siang_in_start, limit_siang_in_end = time(15, 0, 0), time(16, 59, 59)
                 start_sore = time(19, 0, 0)
@@ -743,7 +739,7 @@ class AttendanceService:
                 elif limit_siang_out_start <= t <= limit_siang_out_end:
                     if result['Siang_1'] == '': 
                         result['Siang_1'] = val_str
-                    # TAMBAHAN: Kalau Siang 1 udah keisi, lempar ke Siang 2 (Buat kasus double-tap 1 menit)
+                    # TAMBAHAN UNTUK AGUNG SABAR: Lempar ke Siang 2 kalau Siang 1 udah isi
                     elif result['Siang_2'] == '':
                         result['Siang_2'] = val_str
                         
@@ -756,6 +752,9 @@ class AttendanceService:
                 # Jaring pengaman buat yang pulang nanggung (sebelum batas sore)
                 if t == last_log and t >= time(16, 0, 0) and result['Sore'] == '':
                      result['Sore'] = val_str
+
+            # 👇 INI BARIS YANG TADI HILANG DAN BIKIN SEMUANYA ABSENT 👇
+            return pd.Series(result)
 
         # 4. Finalisasi (Hanya satu kali proses)
         if grouped.ngroups == 0: return pd.DataFrame()
