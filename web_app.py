@@ -1791,7 +1791,7 @@ class ComponentRenderer:
         is_late: bool
     ) -> None:
         """Render detailed attendance information in popover."""
-        st.markdown(f"### ✈️ FLIGHT RECORD: {name}")
+        st.markdown(f"### ✈️ RECORD: {name}")
         st.markdown(f"**DIVISION:** {division}")
         st.markdown(f"**STATUS:** <span style='color:{status_color}; font-weight:bold'>{status_text}</span>", 
                     unsafe_allow_html=True)
