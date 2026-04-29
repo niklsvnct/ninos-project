@@ -697,46 +697,47 @@ class AttendanceService:
             sorted_group = group.sort_values(AppConstants.COL_EVENT_TIME)
             if sorted_group.empty: return pd.Series(result)
 
-            # Logika ambil Tanggal yang ANTI-ERROR:
-            # Karena kita group by [Nama, Tanggal], maka group.name adalah tuple (Nama, Tanggal)
-            # Kita ambil index [1] untuk dapat Tanggalnya
             try:
                 current_date = group.name[1]
             except:
-                # Fallback jika struktur group berbeda
                 current_date = sorted_group['Tanggal'].iloc[0] if 'Tanggal' in sorted_group.columns else date.today()
 
             first_log = sorted_group.iloc[0]['Waktu_Obj']
             last_log = sorted_group.iloc[-1]['Waktu_Obj']
             is_friday = current_date.weekday() == 4
             
-            # --- PENENTUAN SHIFT ---
+            # --- 1. DETEKSI SHIFT PAKAI JAM DATANG (ANTI-JEBAKAN LEMBUR) ---
             is_shift_2 = False
-            if last_log > time(18, 30, 0) or (time(9, 0, 0) <= first_log <= time(11, 30, 0)):
+            if first_log >= time(8, 15, 0):
                 is_shift_2 = True
             
-            # --- SETTING SLOT WAKTU ---
+            # --- 2. SETTING SLOT WAKTU ---
             if not is_shift_2:
-                limit_pagi_end = time(11, 0, 0)
-                limit_siang_out_start, limit_siang_out_end = time(11, 30, 0), time(12, 59, 59)
-                limit_siang_in_start, limit_siang_in_end = time(13, 0, 0), time(14, 0, 0)
+                # ATURAN SHIFT 1 (Istirahat Normal 12:00 - 13:00)
+                limit_pagi_end = time(11, 29, 59)
+                limit_siang_out_start, limit_siang_out_end = time(11, 30, 0), time(13, 15, 0)
+                limit_siang_in_start, limit_siang_in_end = time(13, 16, 0), time(16, 59, 59)
                 start_sore = time(17, 0, 0)
             else:
-                limit_pagi_end = time(11, 0, 0)
+                # ATURAN SHIFT 2 (Istirahat 14:00 - 16:00)
+                limit_pagi_end = time(11, 59, 59)
                 if is_friday:
-                    limit_siang_out_start, limit_siang_out_end = time(11, 30, 0), time(12, 59, 59)
-                    limit_siang_in_start, limit_siang_in_end = time(13, 0, 0), time(14, 0, 0)
+                    # Khusus Jumat
+                    limit_siang_out_start, limit_siang_out_end = time(12, 0, 0), time(13, 29, 59)
+                    limit_siang_in_start, limit_siang_in_end = time(13, 30, 0), time(16, 59, 59)
                 else:
+                    # NORMAL NON-JUMAT: Istirahat 14:00 - 16:00
+                    # Rentang "Keluar" (13:30 - 14:59) dan "Balik" (15:00 - 16:59)
                     limit_siang_out_start, limit_siang_out_end = time(13, 30, 0), time(14, 59, 59)
-                    limit_siang_in_start, limit_siang_in_end = time(15, 0, 0), time(16, 0, 0)
+                    limit_siang_in_start, limit_siang_in_end = time(15, 0, 0), time(16, 59, 59)
                 start_sore = time(19, 0, 0)
 
-            # --- MAPPING KE KOLOM ---
+            # --- 3. MAPPING KE KOLOM ---
             for _, row in sorted_group.iterrows():
                 t = row['Waktu_Obj']
                 val_str = row[AppConstants.COL_EVENT_TIME].strftime(AppConstants.TIME_FORMAT)
                 
-                if t < limit_pagi_end:
+                if t <= limit_pagi_end:
                     if result['Pagi'] == '': result['Pagi'] = val_str
                 elif limit_siang_out_start <= t <= limit_siang_out_end:
                     if result['Siang_1'] == '': result['Siang_1'] = val_str
@@ -745,6 +746,7 @@ class AttendanceService:
                 elif t >= start_sore:
                     result['Sore'] = val_str
                 
+                # Jaring pengaman buat yang pulang nanggung (sebelum batas sore)
                 if t == last_log and t >= time(16, 0, 0) and result['Sore'] == '':
                      result['Sore'] = val_str
 
