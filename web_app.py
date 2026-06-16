@@ -422,17 +422,34 @@ class AttendanceRepository(DataRepository):
             nama = row[AppConstants.COL_PERSON_NAME]
             tgl = row['Tanggal_Absen']
             
+            # Ganti enter jadi koma biar sejajar
             raw_text = str(row['Jam_Raw']).replace('\n', ',').replace('\r', ',')
-            all_punches = raw_text.split(',')
+            all_lines = raw_text.split(',')
             
-            for punch in all_punches:
-                punch = punch.strip()
-                if punch and punch != '-' and punch != '-,-':
-                    event_time_str = f"{tgl} {punch}:00"
-                    expanded_data.append({
-                        AppConstants.COL_PERSON_NAME: nama,
-                        AppConstants.COL_EVENT_TIME: event_time_str
-                    })
+            for line in all_lines:
+                line = line.strip()
+                # Filter teks kosong atau penanda libur/kosong
+                if line and line not in ['-', '-,-', '- / -', 'Libur']:
+                    
+                    # INI KUNCINYA: Pecah lagi berdasarkan garis miring '/'
+                    # Contoh: "06:58 / 12:12" -> jadi ["06:58", "12:12"]
+                    punches = line.split('/')
+                    
+                    for p in punches:
+                        p = p.strip()
+                        
+                        # Pastikan isinya benar-benar angka jam (bukan string nyasar)
+                        if p and p[0].isdigit():
+                            # Jika formatnya cuma "HH:MM", tambahkan detik ":00"
+                            if len(p) == 5: 
+                                event_time_str = f"{tgl} {p}:00"
+                            else:
+                                event_time_str = f"{tgl} {p}"
+                                
+                            expanded_data.append({
+                                AppConstants.COL_PERSON_NAME: nama,
+                                AppConstants.COL_EVENT_TIME: event_time_str
+                            })
         
         # ==========================================
         # 4. KEMBALIKAN KE BENTUK ASLI WEBSITE
